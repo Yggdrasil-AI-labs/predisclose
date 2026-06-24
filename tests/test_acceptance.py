@@ -38,7 +38,7 @@ POSITIVES = {
     "postman-api-key":            "PMAK-" + _A * 24 + "-" + _A * 34,
     "notion-token":               "secret_" + _A * 43,
     "dropbox-token":              "sl." + _A * 130,
-    "telegram-bot-token":         "12345678:AA" + _A * 32,
+    "telegram-bot-token":         "12345678:" + _A * 35,
     "slack-token":                "xoxb-123456789012-abcdefghij",
     "slack-webhook":              "https://hooks.slack.com/services/T00000000/B00000000/" + "X" * 24,
     "discord-webhook":            "https://discord.com/api/webhooks/123456789012345678/" + _A * 30,

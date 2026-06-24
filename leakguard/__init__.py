@@ -2,4 +2,4 @@
 into public artifacts. Generic engine; org-specific patterns load from a private
 config you keep out of version control."""
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"

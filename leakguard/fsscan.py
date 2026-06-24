@@ -10,13 +10,17 @@ IGNORE_FILE = ".leakguardignore"
 
 TEXT_EXT = {
     ".md", ".markdown", ".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
-    ".json", ".yaml", ".yml", ".toml", ".txt", ".rst", ".sh", ".bash", ".cfg",
-    ".ini", ".conf", ".env", ".html", ".htm", ".css", ".csv", ".tsv", ".go",
-    ".rs", ".java", ".c", ".h", ".cpp", ".rb", ".php", ".sql", ".xml", ".svg",
-    ".properties",
+    ".json", ".jsonl", ".ndjson", ".yaml", ".yml", ".toml", ".txt", ".text",
+    ".rst", ".sh", ".bash", ".zsh", ".cfg", ".ini", ".conf", ".cnf", ".env",
+    ".html", ".htm", ".css", ".csv", ".tsv", ".go", ".rs", ".java", ".kt",
+    ".kts", ".scala", ".c", ".h", ".cpp", ".cs", ".rb", ".php", ".pl", ".lua",
+    ".dart", ".swift", ".sql", ".xml", ".svg", ".properties", ".log", ".eml",
+    ".tf", ".tfvars", ".hcl", ".gradle", ".groovy", ".vue", ".svelte", ".ps1",
+    ".psm1", ".bat", ".cmd", ".pem", ".key", ".crt", ".cer", ".pub", ".ovpn",
 }
-TEXT_NAMES = {"readme", "license", "dockerfile", "makefile", "changelog",
-              ".gitignore", ".dockerignore", "requirements.txt", ".env.example"}
+TEXT_NAMES = {"readme", "license", "dockerfile", "containerfile", "makefile",
+              "changelog", ".gitignore", ".dockerignore", "requirements.txt",
+              ".env.example", ".npmrc", ".netrc", ".pgpass", ".htpasswd"}
 SKIP_DIRS = {".git", "node_modules", "vendor", "dist", "build", ".venv", "venv",
              "__pycache__", ".mypy_cache", ".pytest_cache", ".idea"}
 MAX_BYTES = 800_000
