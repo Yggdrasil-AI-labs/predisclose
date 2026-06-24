@@ -98,7 +98,7 @@ def _overlaps(spans, line, start, end):
     return False
 
 
-def entropy_findings(text, allow, path, opts, rule_findings=None, max_line=4000):
+def entropy_findings(text, allow, path, opts, rule_findings=None, max_line=200_000):
     """Return high-entropy Findings for `text`. No-op unless opts.enabled."""
     if not opts or not opts.enabled:
         return []

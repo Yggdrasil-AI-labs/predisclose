@@ -117,7 +117,7 @@ def load_rules(extra_paths=None, use_builtin=True, scan_root="."):
     return rules, set(allow)
 
 
-def scan_text(text, rules, allow=None, path="<text>", max_line=4000):
+def scan_text(text, rules, allow=None, path="<text>", max_line=200_000):
     allow = allow or set()
     findings = []
     seen = set()
