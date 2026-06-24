@@ -2,6 +2,13 @@
 
 [![leakguard](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml/badge.svg)](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml)
 
+> [!WARNING]
+> **Experimental — work in progress.** leakguard is pre-1.0 and under active
+> development. Detection rules, CLI flags, and output formats may change without
+> notice, and it has not been hardened or battle-tested for production use. Try
+> it, kick the tires, and file issues — but pin a tagged version, treat it as a
+> safety net rather than a guarantee, and always review findings yourself.
+
 Catch internal identifiers, secrets, and PII before they leak into public
 artifacts. leakguard scans local files, git staged content (as a pre-commit
 hook), the full git history, and already-published GitHub repos, then reports
