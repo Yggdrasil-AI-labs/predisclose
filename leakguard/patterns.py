@@ -4,7 +4,7 @@ These are universal secret/identifier shapes (cloud keys, private keys, private
 IP ranges, common token formats). They contain NO organization-specific values.
 Anything specific to your infrastructure (internal hostnames, private tool names,
 people, locations) belongs in a private rules file loaded at runtime via --rules
-or an auto-loaded `.leakguard.local.json` — never here, never in the repo.
+or an auto-loaded `.leakguard.local.json`, never here, never in the repo.
 
 Each entry: (id, regex, severity, message, suggestion). Severity is one of
 "low" | "medium" | "high".
@@ -173,7 +173,7 @@ BUILTIN_PATTERNS = [
 # appear in any match of the rule. Used to skip a rule's regex when none are
 # present (big speedup on lines with no secrets). Each anchor MUST be a guaranteed
 # (case-insensitive) substring of every match or matches will be missed. Rules
-# absent here (or with no reliable literal — e.g. twilio AC/SK, telegram, okta)
+# absent here (or with no reliable literal, e.g. twilio AC/SK, telegram, okta)
 # have no prefilter and always run.
 ANCHORS = {
     "aws-access-key-id": ["akia"],

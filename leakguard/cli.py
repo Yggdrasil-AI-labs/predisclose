@@ -280,7 +280,7 @@ def main(argv=None):
         from .verify import verify_findings
         vc = verify_findings(findings)
         if vc.get("active"):
-            print(f"leakguard: {vc['active']} finding(s) VERIFIED ACTIVE — live "
+            print(f"leakguard: {vc['active']} finding(s) VERIFIED ACTIVE, live "
                   f"credential(s), rotate now.", file=sys.stderr)
 
     rc = _emit(findings, scanned, label, args.format, args.fail_on, use_color)

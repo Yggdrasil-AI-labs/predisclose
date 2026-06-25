@@ -11,7 +11,7 @@ Unsupported finding types are left unverified (""). Network calls happen ONLY fo
 supported types and ONLY when --verify is passed. Never raises.
 
 This intentionally covers a small, high-signal set rather than chasing every
-provider — it answers "is this leaked credential live?" without pretending to be
+provider; it answers "is this leaked credential live?" without pretending to be
 a full verification engine. AWS/GCP (request signing) are deferred.
 """
 import base64

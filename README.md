@@ -3,41 +3,40 @@
 [![leakguard](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml/badge.svg)](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml)
 
 > [!WARNING]
-> **Experimental — work in progress.** leakguard is pre-1.0 and under active
-> development. Detection rules, CLI flags, and output formats may change without
-> notice, and it has not been hardened or battle-tested for production use. Try
-> it, kick the tires, and file issues — but pin a tagged version, treat it as a
-> safety net rather than a guarantee, and always review findings yourself.
+> **Experimental, pre-1.0, under active development.** Detection rules, CLI flags,
+> and output formats may change without notice. It has not been hardened for
+> production use. Pin a tagged version, treat it as a safety net rather than a
+> guarantee, and review findings yourself.
 
 Catch internal identifiers, secrets, and PII before they leak into public
 artifacts. leakguard scans local files, git staged content (as a pre-commit
 hook), the full git history, and already-published GitHub repos, then reports
-each hit with a line reference and a suggested fix. It is detection-only: it
-never edits your content. The core is pure Python standard library, **zero
-runtime dependencies** (optional AI layers are installed separately).
+each hit with a line reference and a suggested fix. It is detection-only; it
+never edits your content. The core is pure Python standard library with zero
+runtime dependencies. The optional AI layers are installed separately.
 
-## The safety model (and why this niche exists)
+## The safety model
 
 The thing most likely to leak from a secret-scanner is its own rule list, because
 that list is an inventory of exactly what you are trying to hide. leakguard is
-built so that never happens:
+built so that does not happen:
 
-- The repo ships **only generic, industry-standard patterns** (cloud keys,
-  private-key blocks, RFC1918 / CGNAT addresses, common token formats). These
-  contain no organization-specific values.
-- Your **organization-specific patterns** (internal hostnames, private project
-  names, people, locations) live in a **private rules file you keep out of
-  version control**. leakguard loads it at runtime. It is gitignored by default.
+- The repo ships only generic patterns (cloud keys, private-key blocks, RFC1918
+  and CGNAT addresses, common token formats). These contain no
+  organization-specific values.
+- Your organization-specific patterns (internal hostnames, private project names,
+  people, locations) live in a private rules file you keep out of version control.
+  leakguard loads it at runtime. It is gitignored by default.
 
-This is the disclosure-control angle most scanners miss. Generic secret scanners
-answer "did I commit an AWS key?" leakguard also answers "did I leak the name of
-an internal host, an unreleased project, or a person?" — the things that turn a
-clean-looking public repo, blog post, or AI-generated draft into an attribution
-trail. That second question is exactly what you cannot answer with a public rule
-list, so leakguard splits the engine (public) from the inventory (private).
+leakguard targets disclosure, not only credentials. A generic secret scanner
+answers "did I commit an AWS key?". leakguard also answers "did I leak the name of
+an internal host, an unreleased project, or a person?", which is the kind of
+attribution trail a clean-looking public repo, blog post, or AI-generated draft
+can still carry. You cannot answer that second question with a public rule list,
+so leakguard keeps the engine public and the inventory private.
 
-It pairs naturally with AI-assisted writing and code generation, where internal
-identifiers slip into "helpful" output: run leakguard over generated artifacts
+It also applies to AI-assisted writing and code generation, where internal
+identifiers can slip into generated output: run leakguard over generated artifacts
 before they ship. Optional local AI layers (`leakguard[ai]`) add a Presidio PII
 pass and a local-LLM reviewer on top of the regex engine; see below.
 
@@ -46,27 +45,26 @@ pass and a local-LLM reviewer on top of the regex engine; see below.
 | | leakguard | gitleaks | trufflehog | detect-secrets |
 |---|---|---|---|---|
 | Generic secret detectors | ~63 | ~140 | 800+ | curated |
-| **Private org-identifier rules, kept out of the repo** | **yes** | no | no | no |
-| **Disclosure / PII (hostnames, project names, people)** | **yes** | partial | no | partial |
+| Private org-identifier rules, kept out of the repo | yes | no | no | no |
+| Disclosure / PII (hostnames, project names, people) | yes | partial | no | partial |
 | Baseline (adopt a dirty repo, alert only on new) | yes | partial | no | yes |
 | Git-history scan | yes | yes | yes | yes |
 | Entropy detection | yes (opt-in) | yes | yes | yes |
 | Live credential verification | opt-in (~10 providers) | no | yes (800+) | no |
-| **Local-LLM semantic review** | **yes** | no | no | no |
+| Local-LLM semantic review | yes | no | no | no |
 | SARIF / GitHub code scanning | yes | yes | partial | no |
 | pre-commit framework hook | yes | yes | yes | yes |
-| Core runtime dependencies | **none** | Go binary | Go binary | Python deps |
+| Core runtime dependencies | none | Go binary | Go binary | Python deps |
 
-leakguard is not trying to out-detect the big scanners on raw credential breadth —
-trufflehog (800+ detectors, with live verification) and gitleaks own that. The
-point is the **private-inventory model and disclosure coverage**: catching the
-internal hostname, the unreleased project name, the person — the attribution trail
-a clean-looking public artifact still carries — with the rule list kept private,
-in a single stdlib-only core you can read end to end and drop into any CI.
+leakguard does not aim to match the big scanners on raw credential breadth;
+trufflehog (800+ detectors, with live verification) and gitleaks cover that. Its
+focus is the private-inventory model and disclosure coverage: catching an internal
+hostname, an unreleased project name, or a person, with the rule list kept
+private, in a stdlib-only core you can read end to end and drop into any CI.
 
-**Who it's for:** anyone publishing *from* a private environment — open-sourcing
-an internal tool, writing a blog post or docs, or reviewing AI-generated output —
-who needs to catch internal identifiers and secrets before they go public.
+Who it is for: anyone publishing from a private environment (open-sourcing an
+internal tool, writing a blog post or docs, or reviewing AI-generated output) who
+needs to catch internal identifiers and secrets before they go public.
 
 ## Install
 
@@ -97,8 +95,8 @@ Scan only what is staged for commit (used by the pre-commit hook):
 leakguard scan --staged
 ```
 
-Scan the full git history — finds secrets that were committed and later removed
-(each finding is tagged with the short SHA of the commit it was seen in):
+Scan the full git history. This finds secrets that were committed and later
+removed; each finding is tagged with the short SHA of the commit it was seen in:
 
 ```
 leakguard scan --history
@@ -119,9 +117,9 @@ leakguard github --org your-org
 leakguard github --repo owner/name --repo owner/other
 ```
 
-Adopt leakguard into a repo that already has findings — snapshot them as a
-baseline, then get alerted only on *new* leaks (the baseline stores hashes, never
-the secrets, so it is safe to commit):
+Adopt leakguard into a repo that already has findings: snapshot them as a
+baseline, then get alerted only on new leaks. The baseline stores hashes, not the
+secrets, so it is safe to commit:
 
 ```
 leakguard scan . --baseline .leakguard-baseline.json --update-baseline   # snapshot
@@ -134,18 +132,18 @@ Scaffold a private rules file (writes `.leakguard.local.json` and gitignores it)
 leakguard init
 ```
 
-Check whether matched credentials are actually **live** (opt-in; makes network
-calls only for supported types):
+Check whether matched credentials are live (opt-in; makes network calls only for
+supported types):
 
 ```
 leakguard scan . --verify
 ```
 
 Exit code is `0` when clean (or only findings below the threshold) and `1` when
-there are findings at or above `--fail-on` (default `medium`), which is what makes
-it usable as a CI gate. `--format json` emits machine-readable output, `--format
+there are findings at or above `--fail-on` (default `medium`), which makes it
+usable as a CI gate. `--format json` emits machine-readable output, `--format
 sarif` emits SARIF 2.1.0 for GitHub code scanning, and `--format md` emits a
-Markdown summary for a job summary or PR comment. See **Reporting & alerts** below
+Markdown summary for a job summary or PR comment. See "Reporting and alerts" below
 for how findings reach people.
 
 ## Private rules
@@ -171,10 +169,10 @@ is dropped, which is how you whitelist public names that resemble internal ones.
 
 ## Entropy detection
 
-Pattern rules catch known secret *shapes*. Entropy detection is the complementary
-net: it flags long, high-Shannon-entropy base64/hex-ish tokens that look random
-enough to be a credential even when no pattern matched. It is **off by default**
-(noisy by nature) and findings are **low severity**, so it never blocks a commit
+Pattern rules catch known secret shapes. Entropy detection is a complementary
+pass: it flags long, high-Shannon-entropy base64/hex-ish tokens that look random
+enough to be a credential even when no pattern matched. It is off by default
+(noisy by nature) and findings are low severity, so it does not block a commit
 unless you opt in with `--fail-on low`.
 
 Enable it per-run with `--entropy`, or persistently via an `"entropy"` block in
@@ -185,35 +183,36 @@ your private rules file:
 ```
 
 It honors the `allow` list, skips tokens already covered by a pattern match, and
-skips obvious false positives (lockfiles, subresource-integrity hashes, 40-char
+skips common false positives (lockfiles, subresource-integrity hashes, 40-char
 git object hashes).
 
 ## Verification (`--verify`)
 
-By default leakguard tells you a string *looks* like a credential. `--verify` goes
-one step further for a small set of high-signal providers: it asks the provider
-whether the credential is **live right now**, so you can tell an active leak from a
-long-dead one. It is opt-in, makes network calls only for supported types, and
-never changes the exit code — it annotates findings:
+By default leakguard reports that a string looks like a credential. `--verify`
+goes one step further for a small set of providers: it asks the provider whether
+the credential is live, so you can tell an active leak from a long-dead one. It is
+opt-in, makes network calls only for supported types, and does not change the exit
+code. It annotates findings:
 
-- `active` — the provider accepted it; rotate immediately.
-- `inactive` — the provider returned 401; likely already revoked.
-- `unknown` — network error, rate limit, or an ambiguous response.
+- `active`: the provider accepted it; rotate it.
+- `inactive`: the provider returned 401; likely already revoked.
+- `unknown`: network error, rate limit, or an ambiguous response.
 
-Supported today: GitHub (classic + fine-grained), GitLab, Slack, Stripe, SendGrid,
-npm, OpenAI, Anthropic, and Hugging Face. Other types are left unverified. AWS and
-GCP (which need request signing) are deferred. Stdlib `urllib` only — no new
-dependencies, and nothing is sent anywhere except the credential's own provider.
+Supported today: GitHub (classic and fine-grained), GitLab, Slack, Stripe,
+SendGrid, npm, OpenAI, Anthropic, and Hugging Face. Other types are left
+unverified. AWS and GCP (which need request signing) are not yet supported. It
+uses stdlib `urllib` only, and sends the credential only to its own provider.
 
 ## Keyword proximity (`--proximity`)
 
-Some secrets have no distinctive prefix — bare hex/alnum tokens (Datadog, Algolia,
-Cloudflare, Heroku, JFrog, Facebook, Mapbox, Twitter). A naked regex for "32 hex
-chars" would false-positive on every hash, so these are **off by default**. With
+Some secrets have no distinctive prefix; they are bare hex/alnum tokens (Datadog,
+Algolia, Cloudflare, Heroku, JFrog, Facebook, Mapbox, Twitter). A regex for "32
+hex chars" alone would match many hashes, so these are off by default. With
 `--proximity`, leakguard flags such a token only when a provider keyword
-("datadog", "algolia", …) sits within ~30 characters on the same line — the same
-keyword-gating technique gitleaks uses. The keyword requirement keeps false
-positives low (it stays silent on a bare token with no nearby provider name).
+("datadog", "algolia", and so on) sits within about 30 characters on the same
+line, the same keyword-gating approach gitleaks uses. The keyword requirement
+keeps false positives down; a bare token with no nearby provider name is not
+flagged.
 
 ```
 leakguard scan . --proximity
@@ -221,11 +220,11 @@ leakguard scan . --proximity
 
 ## Optional AI layers (`leakguard[ai]`)
 
-Two **local, opt-in** layers supplement the regex engine. They produce the same
-findings and flow through the same exit-code path, so they just add coverage on
-top of the built-in and private rules. The zero-dependency core keeps working
-without them; if the extra is not installed, each layer prints a one-line install
-hint and is skipped (it never crashes the scan).
+Two local, opt-in layers supplement the regex engine. They produce the same
+findings and flow through the same exit-code path, so they add coverage on top of
+the built-in and private rules. The zero-dependency core keeps working without
+them; if the extra is not installed, each layer prints a one-line install hint and
+is skipped (it does not crash the scan).
 
 Enable them with flags on either `scan` or `github`:
 
@@ -254,14 +253,14 @@ below a confidence threshold are dropped.
 
 ### Local-LLM reviewer (`--review`)
 
-Sends each scanned file plus the findings collected so far to a **local
-OpenAI-compatible** `/v1/chat/completions` endpoint and asks the model to flag
-**misses** the rules and Presidio did not catch. It is model-agnostic and uses
-only the standard-library `urllib` (no client dependency). Model-flagged items
-become findings with `rule_id` `llm-review`.
+Sends each scanned file plus the findings collected so far to a local
+OpenAI-compatible `/v1/chat/completions` endpoint and asks the model to flag
+items the rules and Presidio did not catch. It is model-agnostic and uses only the
+standard-library `urllib` (no client dependency). Model-flagged items become
+findings with `rule_id` `llm-review`.
 
-Local-first by design: the default endpoint is a localhost server (Ollama's
-default port). Pointing it at a remote/cloud endpoint is strictly opt-in via env.
+Local-first by default: the default endpoint is a localhost server (Ollama's
+default port). Pointing it at a remote/cloud endpoint is opt-in via env.
 
 | env | default | meaning |
 | --- | --- | --- |
@@ -280,7 +279,7 @@ leakguard scan . --review
 
 Both layers are detection-only and run locally by default. The LLM reviewer sends
 file content to whatever endpoint you configure, so keep it pointed at a local
-model unless you have explicitly decided otherwise.
+model unless you have decided otherwise.
 
 ## Pre-commit hook
 
@@ -290,13 +289,13 @@ Plain git hook:
 ln -sf ../../hooks/pre-commit .git/hooks/pre-commit
 ```
 
-Or via the [pre-commit framework](https://pre-commit.com) — add to your
+Or via the [pre-commit framework](https://pre-commit.com), add to your
 `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
   - repo: https://github.com/Yggdrasil-AI-labs/leakguard
-    rev: v0.3.0
+    rev: v0.4.8
     hooks:
       - id: leakguard
 ```
@@ -312,44 +311,43 @@ private patterns in CI, store the rules JSON as a `LEAKGUARD_RULES_JSON`
 repository secret; the workflow writes it to `.leakguard.local.json` at runtime
 (it is never committed).
 
-## Reporting & alerts — how you find out
+## Reporting and alerts
 
-A scanner is only useful if someone learns when it trips. leakguard surfaces a
-finding four ways; the bundled workflow wires up the first three out of the box.
+leakguard surfaces a finding four ways; the bundled workflow wires up the first
+three out of the box.
 
-- **Exit code** — `1` when any finding is at or above `--fail-on` (default
-  `medium`), else `0`. This is what fails a CI job or blocks a commit.
-- **Job summary** — `leakguard scan . --format md` prints a findings table; the
+- Exit code: `1` when any finding is at or above `--fail-on` (default `medium`),
+  else `0`. This is what fails a CI job or blocks a commit.
+- Job summary: `leakguard scan . --format md` prints a findings table; the
   workflow appends it to `$GITHUB_STEP_SUMMARY`, so every Actions run page shows
-  it at a glance (matched values are redacted).
-- **Pull-request comment** — the workflow posts and updates one sticky comment
-  with that table on each PR, so reviewers see leaks inline.
-- **SARIF / Security tab** — `--format sarif`, uploaded via
-  `github/codeql-action/upload-sarif`; alerts show under **Security → Code
-  scanning**.
-- **Webhook push** — `--notify-webhook <url>` (or the `LEAKGUARD_WEBHOOK` env
-  var) POSTs a summary to Slack, Discord, or a generic webhook when findings hit
-  the threshold. Stdlib only; meant for scheduled/cron scans with no PR to
-  comment on. Pick the shape with `--notify-style slack|discord|generic` (or
+  it (matched values are redacted).
+- Pull-request comment: the workflow posts and updates one sticky comment with
+  that table on each PR, so reviewers see findings inline.
+- SARIF / Security tab: `--format sarif`, uploaded via
+  `github/codeql-action/upload-sarif`; alerts show under Security, Code scanning.
+- Webhook push: `--notify-webhook <url>` (or the `LEAKGUARD_WEBHOOK` env var)
+  POSTs a summary to Slack, Discord, or a generic webhook when findings hit the
+  threshold. Stdlib only; meant for scheduled scans with no PR to comment on. Pick
+  the shape with `--notify-style slack|discord|generic` (or
   `LEAKGUARD_WEBHOOK_STYLE`).
 
 ### Permissions and tokens you need
 
 The bundled workflow already requests these. If you wire leakguard into your own
-workflow, you must grant them yourself — the automatic `GITHUB_TOKEN` Actions
-injects is **read-only by default**, so the `write` scopes below are required.
+workflow, you must grant them yourself. The automatic `GITHUB_TOKEN` Actions
+injects is read-only by default, so the `write` scopes below are required.
 
 | Surface | Requires | Notes |
 | --- | --- | --- |
 | Exit code / job summary | nothing | works out of the box |
-| SARIF → Security tab | `permissions: security-events: write` | GitHub-hosted code scanning |
+| SARIF, Security tab | `permissions: security-events: write` | GitHub-hosted code scanning |
 | PR comment | `permissions: pull-requests: write` | uses the built-in `GITHUB_TOKEN`; no PAT or extra secret |
 | Webhook push | a `LEAKGUARD_WEBHOOK` secret (your incoming-webhook URL) | uncomment the "Notify webhook" step to enable |
 | Private org rules | a `LEAKGUARD_RULES_JSON` secret | written to `.leakguard.local.json` at runtime, never committed |
 
-You never create or store a personal access token for the PR comment or SARIF
-upload — both ride the `GITHUB_TOKEN` GitHub injects automatically. You only have
-to grant it the `write` scopes above in the workflow's `permissions:` block.
+You do not create or store a personal access token for the PR comment or SARIF
+upload; both use the `GITHUB_TOKEN` GitHub injects automatically. You only grant
+it the `write` scopes above in the workflow's `permissions:` block.
 
 ## Built-in patterns
 
@@ -361,12 +359,12 @@ Stripe, Twilio, SendGrid, Mailchimp, Google OAuth, Square, Shopify, Postman,
 Notion, Dropbox, Telegram, Slack and Discord tokens/webhooks); observability and
 platform tokens (Sentry DSNs, Databricks, New Relic, Linear, Doppler, Grafana,
 Mailgun, Pulumi, Terraform Cloud, HashiCorp Vault, GCP OAuth refresh tokens,
-`.npmrc` auth tokens); private-key blocks,
-JWTs, database connection URIs and basic-auth URLs with embedded credentials,
-hard-coded secret assignments, and Authorization headers; RFC1918 and CGNAT IP
-addresses, Tailscale MagicDNS hostnames, and email addresses. Tune severities or
-disable the built-ins with `--no-builtin` and supply your own. (Breadth is not the
-goal — see **How it compares**; the private-rules model is.)
+`.npmrc` auth tokens); private-key blocks, JWTs, database connection URIs and
+basic-auth URLs with embedded credentials, hard-coded secret assignments, and
+Authorization headers; RFC1918 and CGNAT IP addresses, Tailscale MagicDNS
+hostnames, and email addresses. Tune severities or disable the built-ins with
+`--no-builtin` and supply your own. Breadth is not a goal of this project; see
+"How it compares".
 
 ## License
 

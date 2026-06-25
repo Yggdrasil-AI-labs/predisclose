@@ -1,10 +1,10 @@
 """Keyword-proximity detection (opt-in). Stdlib only.
 
-Some real secrets have NO distinctive prefix — they are bare hex/alnum/UUID tokens
+Some real secrets have NO distinctive prefix; they are bare hex/alnum/UUID tokens
 (Datadog, Algolia, Cloudflare, Heroku, JFrog, ...). A naked regex for "32 hex chars"
 would false-positive on every hash. The technique mature scanners (gitleaks,
 detect-secrets) use is **keyword proximity**: only flag the token when a provider
-keyword sits nearby. This module mirrors that — keyword-first, same line, within a
+keyword sits nearby. This module mirrors that: keyword-first, same line, within a
 small window. OFF by default; enable with `--proximity`.
 
 Rule shape: (rule_id, [keywords], token_regex, severity, message).

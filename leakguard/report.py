@@ -2,7 +2,7 @@
 
 Feeds `--format md` (a Markdown table for the GitHub Actions job summary and PR
 comments) and the compact text used in webhook notifications. Matched values are
-REDACTED here (same policy as SARIF) because these outputs get posted to shared
+redacted here (same policy as SARIF) because these outputs get posted to shared
 surfaces.
 """
 from collections import Counter
@@ -11,17 +11,13 @@ from . import __version__
 from .sarif import redact
 
 _SEV_RANK = {"high": 0, "medium": 1, "low": 2}
-_EMOJI = {"high": "\U0001F534", "medium": "\U0001F7E0", "low": "\U0001F7E1"}  # red/orange/yellow
-_VMARK = {"active": " ✅ live", "inactive": " ⚪ dead", "unknown": " ❓"}
+_VMARK = {"active": " (live)", "inactive": " (dead)", "unknown": " (unverified)"}
 
 
 def _counts_line(findings):
     c = Counter(f.severity for f in findings)
-    parts = []
-    for sev in ("high", "medium", "low"):
-        if c.get(sev):
-            parts.append(f"{_EMOJI[sev]} {c[sev]} {sev}")
-    return " · ".join(parts)
+    parts = [f"{c[sev]} {sev}" for sev in ("high", "medium", "low") if c.get(sev)]
+    return ", ".join(parts)
 
 
 def _loc(f):
@@ -35,17 +31,17 @@ def build_markdown(findings, scanned, label, fail_on=None, blocking=None, title=
     """A Markdown summary suitable for a GitHub job summary or PR comment."""
     n = len(findings)
     if n == 0:
-        return (f"## ✅ {title}: clean\n\n"
+        return (f"## {title}: clean\n\n"
                 f"No findings across {scanned} file(s) scanned ({label}).\n")
-    out = [f"## \U0001F6E1️ {title}: {n} finding(s) across {scanned} file(s) "
-           f"({label})", "", _counts_line(findings), ""]
+    out = [f"## {title}: {n} finding(s) across {scanned} file(s) ({label})",
+           "", _counts_line(findings), ""]
     active = sum(1 for f in findings if getattr(f, "verified", "") == "active")
     if active:
-        out.append(f"**\U0001F525 {active} verified ACTIVE (live credential(s) — rotate now).**")
+        out.append(f"**{active} verified active (live credential(s); rotate now).**")
         out.append("")
     if fail_on is not None and blocking is not None:
         if blocking:
-            out.append(f"**{blocking} finding(s) at or above `{fail_on}` — failing.**")
+            out.append(f"**{blocking} finding(s) at or above `{fail_on}`; failing.**")
         else:
             out.append(f"All findings are below `{fail_on}` (non-blocking).")
         out.append("")
@@ -53,7 +49,7 @@ def build_markdown(findings, scanned, label, fail_on=None, blocking=None, title=
     out.append("|---|---|---|---|---|")
     for f in sorted(findings, key=lambda x: (_SEV_RANK.get(x.severity, 1), x.path, x.line)):
         cells = [
-            f"{_EMOJI.get(f.severity, '')} {f.severity}",
+            f.severity,
             f"`{f.rule_id}`" + _VMARK.get(getattr(f, "verified", ""), ""),
             f"`{_loc(f)}`",
             f"`{redact(f.match)}`",
@@ -68,13 +64,13 @@ def build_summary_text(findings, scanned, label, limit=20, title="leakguard"):
     """A compact plain-text summary for webhook/chat notifications."""
     n = len(findings)
     if n == 0:
-        return f"✅ {title}: clean — 0 findings across {scanned} file(s) ({label})."
-    lines = [f"\U0001F6E1️ {title}: {n} finding(s) across {scanned} file(s) ({label})",
+        return f"{title}: clean, 0 findings across {scanned} file(s) ({label})."
+    lines = [f"{title}: {n} finding(s) across {scanned} file(s) ({label})",
              _counts_line(findings)]
     ordered = sorted(findings, key=lambda x: (_SEV_RANK.get(x.severity, 1), x.path, x.line))
     for f in ordered[:limit]:
-        live = " ✅LIVE" if getattr(f, "verified", "") == "active" else ""
-        lines.append(f"• [{f.severity.upper()}] {f.rule_id}  {_loc(f)}  {redact(f.match)}{live}")
+        live = " [live]" if getattr(f, "verified", "") == "active" else ""
+        lines.append(f"- [{f.severity.upper()}] {f.rule_id}  {_loc(f)}  {redact(f.match)}{live}")
     if n > limit:
-        lines.append(f"… and {n - limit} more")
+        lines.append(f"... and {n - limit} more")
     return "\n".join(lines)
