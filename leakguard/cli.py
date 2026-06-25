@@ -147,6 +147,9 @@ def _add_common(p):
     p.add_argument("--verify", action="store_true",
                    help="for supported credential types, call the provider to check "
                         "if the secret is live (network; off by default)")
+    p.add_argument("--proximity", action="store_true",
+                   help="also flag anchorless tokens (Datadog, Algolia, Cloudflare, "
+                        "Heroku, JFrog, ...) when a provider keyword is nearby")
     p.add_argument("--presidio", action="store_true",
                    help="add a Microsoft Presidio PII pass (needs leakguard[ai])")
     p.add_argument("--review", action="store_true",
@@ -233,18 +236,20 @@ def main(argv=None):
             extra_paths=args.rules, scan_root=scan_root)
         if args.history:
             findings, commits, scanned, herr = scan_history(
-                rules, allow, since=args.since, entropy_opts=entropy_opts)
+                rules, allow, since=args.since, entropy_opts=entropy_opts,
+                proximity=args.proximity)
             if herr:
                 print(f"leakguard: history scan error: {herr}", file=sys.stderr)
                 return 2
             label = f"{commits} commit(s)"
         elif args.staged:
             findings, scanned = scan_staged(rules, allow, entropy_opts=entropy_opts,
-                                            ai_hook=ai_hook)
+                                            ai_hook=ai_hook, proximity=args.proximity)
             label = "git staged"
         else:
             findings, scanned = scan_paths(args.paths, rules, allow, root=scan_root,
-                                           entropy_opts=entropy_opts, ai_hook=ai_hook)
+                                           entropy_opts=entropy_opts, ai_hook=ai_hook,
+                                           proximity=args.proximity)
             label = "filesystem"
     else:  # github
         if not (args.org or args.user or args.repo):

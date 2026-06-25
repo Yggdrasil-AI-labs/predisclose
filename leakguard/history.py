@@ -10,6 +10,7 @@ import subprocess
 
 from .engine import scan_text
 from .entropy import entropy_findings
+from .proximity import proximity_findings
 from .fsscan import is_text, load_ignore, _ignored
 
 
@@ -48,7 +49,7 @@ def _blob(sha, path, cwd="."):
     return r.stdout
 
 
-def scan_history(rules, allow, since=None, cwd=".", entropy_opts=None):
+def scan_history(rules, allow, since=None, cwd=".", entropy_opts=None, proximity=False):
     """Returns (findings, commits_scanned, files_scanned, error_or_None)."""
     if not is_git_repo(cwd):
         return [], 0, 0, "not a git repository"
@@ -72,6 +73,8 @@ def scan_history(rules, allow, since=None, cwd=".", entropy_opts=None):
             if entropy_opts and entropy_opts.enabled:
                 file_findings += entropy_findings(text, allow, path,
                                                   entropy_opts, file_findings)
+            if proximity:
+                file_findings += proximity_findings(text, allow, path, file_findings)
             for f in file_findings:
                 key = (f.rule_id, f.path, f.line, f.column, f.match)
                 if key in seen:

@@ -205,6 +205,20 @@ npm, OpenAI, Anthropic, and Hugging Face. Other types are left unverified. AWS a
 GCP (which need request signing) are deferred. Stdlib `urllib` only — no new
 dependencies, and nothing is sent anywhere except the credential's own provider.
 
+## Keyword proximity (`--proximity`)
+
+Some secrets have no distinctive prefix — bare hex/alnum tokens (Datadog, Algolia,
+Cloudflare, Heroku, JFrog, Facebook, Mapbox, Twitter). A naked regex for "32 hex
+chars" would false-positive on every hash, so these are **off by default**. With
+`--proximity`, leakguard flags such a token only when a provider keyword
+("datadog", "algolia", …) sits within ~30 characters on the same line — the same
+keyword-gating technique gitleaks uses. The keyword requirement keeps false
+positives low (it stays silent on a bare token with no nearby provider name).
+
+```
+leakguard scan . --proximity
+```
+
 ## Optional AI layers (`leakguard[ai]`)
 
 Two **local, opt-in** layers supplement the regex engine. They produce the same

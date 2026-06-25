@@ -5,6 +5,7 @@ import subprocess
 
 from .engine import scan_text
 from .entropy import entropy_findings
+from .proximity import proximity_findings
 
 IGNORE_FILE = ".leakguardignore"
 
@@ -93,16 +94,19 @@ def iter_paths(paths, root=".", ignore=None):
                         yield fp
 
 
-def _scan_one(text, rules, allow, path, entropy_opts=None, ai_hook=None):
+def _scan_one(text, rules, allow, path, entropy_opts=None, ai_hook=None, proximity=False):
     findings = scan_text(text, rules, allow, path=path)
     if entropy_opts and entropy_opts.enabled:
         findings += entropy_findings(text, allow, path, entropy_opts, findings)
+    if proximity:
+        findings += proximity_findings(text, allow, path, findings)
     if ai_hook is not None:
         findings = findings + ai_hook(text, path, findings)
     return findings
 
 
-def scan_paths(paths, rules, allow, root=".", entropy_opts=None, ai_hook=None):
+def scan_paths(paths, rules, allow, root=".", entropy_opts=None, ai_hook=None,
+               proximity=False):
     ignore = load_ignore(root)
     findings = []
     scanned = 0
@@ -113,7 +117,7 @@ def scan_paths(paths, rules, allow, root=".", entropy_opts=None, ai_hook=None):
         if text is None:
             continue
         scanned += 1
-        findings.extend(_scan_one(text, rules, allow, path, entropy_opts, ai_hook))
+        findings.extend(_scan_one(text, rules, allow, path, entropy_opts, ai_hook, proximity))
     return findings, scanned
 
 
@@ -126,7 +130,7 @@ def staged_files(cwd="."):
     return [f for f in r.stdout.split("\0") if f]
 
 
-def scan_staged(rules, allow, cwd=".", entropy_opts=None, ai_hook=None):
+def scan_staged(rules, allow, cwd=".", entropy_opts=None, ai_hook=None, proximity=False):
     """Scan the STAGED content of files about to be committed (pre-commit use)."""
     findings = []
     scanned = 0
@@ -137,5 +141,5 @@ def scan_staged(rules, allow, cwd=".", entropy_opts=None, ai_hook=None):
         if blob.returncode != 0:
             continue
         scanned += 1
-        findings.extend(_scan_one(blob.stdout, rules, allow, f, entropy_opts, ai_hook))
+        findings.extend(_scan_one(blob.stdout, rules, allow, f, entropy_opts, ai_hook, proximity))
     return findings, scanned
