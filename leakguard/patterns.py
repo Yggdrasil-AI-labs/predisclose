@@ -169,9 +169,76 @@ BUILTIN_PATTERNS = [
 ]
 
 
+# Prefilter anchors: lowercase literal substring(s), AT LEAST ONE of which MUST
+# appear in any match of the rule. Used to skip a rule's regex when none are
+# present (big speedup on lines with no secrets). Each anchor MUST be a guaranteed
+# (case-insensitive) substring of every match or matches will be missed. Rules
+# absent here (or with no reliable literal — e.g. twilio AC/SK, telegram, okta)
+# have no prefilter and always run.
+ANCHORS = {
+    "aws-access-key-id": ["akia"],
+    "gcp-api-key": ["aiza"],
+    "gcp-service-account": ["service_account"],
+    "azure-storage-key": ["accountkey="],
+    "azure-sas-token": ["sig="],
+    "digitalocean-token": ["dop_v1_"],
+    "github-token": ["ghp_", "gho_", "ghu_", "ghs_", "ghr_"],
+    "github-pat-fine-grained": ["github_pat_"],
+    "gitlab-pat": ["glpat-"],
+    "npm-access-token": ["npm_"],
+    "pypi-token": ["pypi-ageichlwas5vcmc"],
+    "anthropic-api-key": ["sk-ant-"],
+    "openai-api-key": ["sk-"],
+    "huggingface-token": ["hf_"],
+    "stripe-secret-key": ["k_live_", "k_test_"],
+    "sendgrid-api-key": ["sg."],
+    "mailchimp-api-key": ["-us"],
+    "google-oauth-client-secret": ["gocspx-"],
+    "square-access-token": ["sq0atp-", "sq0csp-"],
+    "shopify-token": ["shpat_", "shpss_", "shpca_", "shppa_"],
+    "postman-api-key": ["pmak-"],
+    "notion-token": ["secret_", "ntn_"],
+    "dropbox-token": ["sl."],
+    "slack-token": ["xox"],
+    "slack-webhook": ["hooks.slack.com"],
+    "discord-webhook": ["discord"],
+    "slack-app-token": ["xapp-"],
+    "sentry-dsn": ["sentry.io"],
+    "databricks-pat": ["dapi"],
+    "newrelic-api-key": ["nrak-"],
+    "gcp-oauth-refresh-token": ["1//"],
+    "linear-api-key": ["lin_api_"],
+    "doppler-token": ["dp.pt."],
+    "grafana-service-account": ["glsa_"],
+    "mailgun-api-key": ["key-"],
+    "pulumi-token": ["pul-"],
+    "terraform-cloud-token": [".atlasv1."],
+    "hashicorp-vault-token": ["hvs."],
+    "npmrc-auth-token": ["_authtoken="],
+    "atlassian-api-token": ["atatt3"],
+    "firebase-fcm-key": ["aaaa"],
+    "newrelic-license-key": ["nral-"],
+    "azure-ad-client-secret": ["~"],
+    "docker-config-auth": ['"auth"'],
+    "jdbc-url-password": ["jdbc:"],
+    "netrc-credentials": ["machine"],
+    "private-key-block": ["private key"],
+    "jwt": ["eyj"],
+    "db-connection-uri": ["postgres", "mysql", "mongodb", "redis", "amqp"],
+    "url-basic-auth": ["://"],
+    "generic-assignment-secret": ["key", "secret", "passwd", "password", "token"],
+    "authorization-header": ["authorization"],
+    "private-ip": ["10.", "192.168.", "172."],
+    "cgnat-ip": ["100."],
+    "tailscale-magicdns": [".ts.net"],
+    "email-address": ["@"],
+}
+
+
 def builtin_rules():
     """Return BUILTIN_PATTERNS as plain dicts (engine compiles them)."""
     return [
-        {"id": i, "pattern": p, "severity": s, "message": m, "suggestion": g}
+        {"id": i, "pattern": p, "severity": s, "message": m, "suggestion": g,
+         "anchor": ANCHORS.get(i)}
         for (i, p, s, m, g) in BUILTIN_PATTERNS
     ]

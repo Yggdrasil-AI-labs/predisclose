@@ -51,14 +51,20 @@ class Finding:
 
 
 class Rule:
-    __slots__ = ("id", "regex", "severity", "message", "suggestion")
+    __slots__ = ("id", "regex", "severity", "message", "suggestion", "anchors")
 
-    def __init__(self, rid, pattern, severity="high", message="", suggestion="", flags=""):
+    def __init__(self, rid, pattern, severity="high", message="", suggestion="",
+                 flags="", anchors=None):
         self.id = rid
         self.regex = re.compile(pattern, _compile_flags(flags))
         self.severity = severity if severity in SEVERITY_ORDER else "medium"
         self.message = message
         self.suggestion = suggestion
+        # Lowercase literal substrings, at least one of which MUST appear in any
+        # match. Used as a cheap prefilter: skip the regex when none are present.
+        # Empty -> always run (sound fallback). Anchors must be guaranteed
+        # substrings of every match or matches will be missed.
+        self.anchors = tuple(a.lower() for a in anchors) if anchors else ()
 
 
 def _compile_flags(flags):
@@ -81,7 +87,7 @@ def _rules_from_dicts(items):
         try:
             out.append(Rule(r["id"], r["pattern"], r.get("severity", "high"),
                             r.get("message", ""), r.get("suggestion", ""),
-                            r.get("flags", "")))
+                            r.get("flags", ""), r.get("anchor")))
         except (KeyError, re.error) as e:
             raise ValueError(f"bad rule {r.get('id', r)!r}: {e}")
     return out
@@ -125,7 +131,10 @@ def scan_text(text, rules, allow=None, path="<text>", max_line=200_000):
     for ln, line in enumerate(text.splitlines(), 1):
         if len(line) > max_line:
             line = line[:max_line]
+        low = line.lower()  # cheap prefilter substrate (see Rule.anchors)
         for rule in rules:
+            if rule.anchors and not any(a in low for a in rule.anchors):
+                continue
             for m in rule.regex.finditer(line):
                 term = m.group(0)
                 if term in allow:
