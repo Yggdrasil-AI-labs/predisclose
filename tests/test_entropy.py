@@ -53,7 +53,6 @@ class TestEntropy(unittest.TestCase):
         ef = entropy_findings(text, allow, "f.txt", self.opts, rf)
         self.assertFalse(any("AKIA" in x.match for x in ef))
 
-
     def test_bare_uuid_not_flagged(self):
         # request/trace ids in logs; the real UUID secret (Heroku) is proximity turf
         f = entropy_findings("request_id=c0d0d1d5-ff13-48d6-bc6d-049e74011858",
@@ -74,7 +73,6 @@ class TestEntropy(unittest.TestCase):
         self.assertTrue(tok.endswith("="))
         f = entropy_findings("k = " + tok, set(), "f.txt", self.opts, [])
         self.assertTrue(any(x.match == tok for x in f))
-
 
     def test_actions_ref_not_flagged(self):
         # CI action refs are 3+ short dictionary segments, not base64
