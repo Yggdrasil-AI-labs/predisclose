@@ -41,6 +41,29 @@ class TestProximity(unittest.TestCase):
         hits = [f for f in proximity_findings(text) if f.rule_id == "datadog-app-key"]
         self.assertEqual(hits, [])
 
+    def test_keyword_after_token_fires(self):
+        # bidirectional: token first, provider keyword in a trailing comment
+        text = 'x = "' + "a" * 40 + '"  # datadog app key'
+        ids = {f.rule_id for f in proximity_findings(text)}
+        self.assertIn("datadog-app-key", ids)
+
+    def test_keyword_on_previous_line_fires(self):
+        # multi-line: keyword on the line above the token
+        text = "# Datadog credentials\napi_key = '" + "a" * 32 + "'"
+        ids = {f.rule_id for f in proximity_findings(text)}
+        self.assertIn("datadog-api-key", ids)
+
+    def test_keyword_far_after_token_is_silent(self):
+        text = "a" * 40 + " " * 80 + "datadog"
+        hits = [f for f in proximity_findings(text) if f.rule_id == "datadog-app-key"]
+        self.assertEqual(hits, [])
+
+    def test_keyword_inside_token_does_not_self_trigger(self):
+        # an alnum token that merely CONTAINS a provider word must not flag itself
+        tok = "algolia" + "b1" * 12 + "c"  # 32 alnum chars containing 'algolia'
+        self.assertEqual(len(tok), 32)
+        self.assertEqual(proximity_findings('v = "' + tok + '"'), [])
+
     def test_allow_list_honored(self):
         tok = "a" * 40
         self.assertEqual(proximity_findings(f'datadog="{tok}"', allow={tok}), [])

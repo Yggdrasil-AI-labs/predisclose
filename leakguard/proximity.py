@@ -4,18 +4,23 @@ Some real secrets have NO distinctive prefix; they are bare hex/alnum/UUID token
 (Datadog, Algolia, Cloudflare, Heroku, JFrog, ...). A naked regex for "32 hex chars"
 would false-positive on every hash. The technique mature scanners (gitleaks,
 detect-secrets) use is **keyword proximity**: only flag the token when a provider
-keyword sits nearby. This module mirrors that: keyword-first, same line, within a
-small window. OFF by default; enable with `--proximity`.
+keyword sits nearby. This module mirrors that. OFF by default; enable with
+`--proximity`.
 
 Rule shape: (rule_id, [keywords], token_regex, severity, message).
-Match model: (?i) <keyword> [^newline]{0,WINDOW}? (token)   with token not glued to
-adjacent alphanumerics. Table sourced from gitleaks config/gitleaks.toml @ 09242ce.
+Match model: the token shape is matched standalone (not glued to adjacent
+alphanumerics) and fires when a provider keyword occurs within WINDOW chars on
+EITHER side of it, newlines allowed. Bidirectional + multi-line catches
+`token  # datadog` and keyword-on-the-previous-line placements that a
+keyword-first same-line model misses. The keyword search excludes the token span
+itself, so an alnum token that happens to contain a provider word cannot
+self-trigger. Table sourced from gitleaks config/gitleaks.toml @ 09242ce.
 """
 import re
 
 from .engine import Finding, SEVERITY_ORDER
 
-WINDOW = 30  # max chars between the provider keyword and the token, same line
+WINDOW = 60  # max chars between the provider keyword and the token, either side
 
 # (rule_id, keywords, token-shape regex (secret portion only), severity, message)
 KEYWORD_RULES = [
@@ -51,18 +56,19 @@ KEYWORD_RULES = [
 _COMPILED = None
 
 
-def _compiled(window=WINDOW):
+def _compiled():
     global _COMPILED
-    if _COMPILED is None or _COMPILED[0] != window:
+    if _COMPILED is None:
         rules = []
         for rid, kws, tok, sev, msg in KEYWORD_RULES:
-            kw = "|".join(re.escape(k) for k in kws)
-            rx = re.compile(
-                r"(?i)(?:%s)[^\n]{0,%d}?(?<![A-Za-z0-9])(%s)(?![A-Za-z0-9])"
-                % (kw, window, tok))
-            rules.append((rid, rx, sev if sev in SEVERITY_ORDER else "medium", msg))
-        _COMPILED = (window, rules)
-    return _COMPILED[1]
+            kw_rx = re.compile(
+                r"(?i)(?:%s)" % "|".join(re.escape(k) for k in kws))
+            tok_rx = re.compile(
+                r"(?i)(?<![A-Za-z0-9])(%s)(?![A-Za-z0-9])" % tok)
+            rules.append((rid, kws, kw_rx, tok_rx,
+                          sev if sev in SEVERITY_ORDER else "medium", msg))
+        _COMPILED = rules
+    return _COMPILED
 
 
 def _linecol(text, pos):
@@ -82,14 +88,23 @@ def proximity_findings(text, allow=None, path="<text>", rule_findings=None, wind
     """Keyword-proximity findings. No-op unless called (the CLI gates on --proximity)."""
     allow = allow or set()
     spans = _covered_spans(rule_findings)
+    lowered = text.lower()
     out, seen = [], set()
-    for rid, rx, sev, msg in _compiled(window):
-        for m in rx.finditer(text):
+    for rid, kws, kw_rx, tok_rx, sev, msg in _compiled():
+        # cheap gate: never run the token regex unless a keyword is in the file
+        if not any(k in lowered for k in kws):
+            continue
+        for m in tok_rx.finditer(text):
             tok = m.group(1)
             if tok in allow:
                 continue
-            pos = m.start(1)
-            line, col = _linecol(text, pos)
+            s, e = m.start(1), m.end(1)
+            # keyword within `window` chars before or after the token (newlines ok);
+            # the token span itself is excluded so it cannot self-trigger
+            if not (kw_rx.search(text, max(0, s - window), s)
+                    or kw_rx.search(text, e, e + window)):
+                continue
+            line, col = _linecol(text, s)
             # skip if a pattern rule already flagged this span (no double-report)
             if any(c0 < (col - 1 + len(tok)) and (col - 1) < c1
                    for (c0, c1) in spans.get(line, ())):
