@@ -1,17 +1,7 @@
 {
   "leakguard_baseline_version": 1,
-  "generated_by": "leakguard 0.4.9",
+  "generated_by": "leakguard 0.4.10",
   "fingerprints": [
-    "1e49c31d7077ee5a",
-    "1f01bf52a8d529e5",
-    "1fe8178e00a5a8df",
-    "2583a00e7c74969b",
-    "3fa4e656f86ce2c3",
-    "62bf638f9da56bc8",
-    "65b106248d15e862",
-    "79cb4e8090d65f3b",
-    "a853cd1e5dce8b6a",
-    "c5feee334b01afe5",
-    "ff5cfeb48f8cf545"
+    "79cb4e8090d65f3b"
   ]
 }

@@ -54,5 +54,40 @@ class TestEntropy(unittest.TestCase):
         self.assertFalse(any("AKIA" in x.match for x in ef))
 
 
+    def test_bare_uuid_not_flagged(self):
+        # request/trace ids in logs; the real UUID secret (Heroku) is proximity turf
+        f = entropy_findings("request_id=c0d0d1d5-ff13-48d6-bc6d-049e74011858",
+                             set(), "app.log", self.opts, [])
+        self.assertEqual(f, [])
+
+    def test_key_value_not_glued_by_equals(self):
+        # = joins key and value only as base64 TRAILING padding, never mid-token;
+        # an env assignment of two low-entropy words must not flag as one token
+        f = entropy_findings("SERVICE_NAME=scanner-stress-service",
+                             set(), ".env", self.opts, [])
+        self.assertEqual(f, [])
+
+    def test_trailing_padding_kept(self):
+        # an 88-char base64 key ending == (azure-storage shape) must still flag
+        import base64, os
+        tok = base64.b64encode(os.urandom(64)).decode()
+        self.assertTrue(tok.endswith("="))
+        f = entropy_findings("k = " + tok, set(), "f.txt", self.opts, [])
+        self.assertTrue(any(x.match == tok for x in f))
+
+
+    def test_actions_ref_not_flagged(self):
+        # CI action refs are 3+ short dictionary segments, not base64
+        f = entropy_findings("      uses: github/codeql-action/upload-sarif@v3",
+                             set(), "ci.yml", self.opts, [])
+        self.assertEqual(f, [])
+
+    def test_url_path_after_domain_not_flagged(self):
+        f = entropy_findings(
+            "see https://github.com/Example-Org-Name/some-repo-name/issues",
+            set(), "README.md", self.opts, [])
+        self.assertEqual(f, [])
+
+
 if __name__ == "__main__":
     unittest.main()

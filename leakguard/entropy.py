@@ -28,7 +28,7 @@ from .engine import Finding, SEVERITY_ORDER
 RULE_ID = "high-entropy-string"
 
 # Candidate token shapes. Final length/entropy gating is done against the options.
-_B64_RE = re.compile(r"[A-Za-z0-9+/=_\-]{16,}")
+_B64_RE = re.compile(r"[A-Za-z0-9+/_\-]{16,}={0,2}")  # = only as trailing padding
 _HEX_RE = re.compile(r"\b[0-9a-fA-F]{16,}\b")
 
 # Files whose contents are mostly generated hashes -> skip entirely.
@@ -81,6 +81,10 @@ def _looks_benign(token):
     # 40-char git object hashes are everywhere and almost never secrets.
     if re.fullmatch(r"[0-9a-f]{40}", low):
         return True
+    # bare UUIDs are request/trace/correlation ids, not credentials; the one
+    # real UUID secret shape (Heroku) is the keyword-gated proximity pass job
+    if re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", low):
+        return True
     return False
 
 
@@ -119,6 +123,20 @@ def entropy_findings(text, allow, path, opts, rule_findings=None, max_line=200_0
                 tok = m.group(0)
                 if len(tok) < min_len:
                     continue
+                # domain-dot context: a candidate starting right after a "."
+                # is a URL fragment ("github." + "com/org/repo"), a JWT segment
+                # (the eyJ pattern rule owns real JWTs), or a filename suffix --
+                # not a standalone credential
+                if m.start() > 0 and line[m.start() - 1] == ".":
+                    continue
+                # path-of-short-words shape ("github/codeql-action/upload-sarif"):
+                # 3+ slash segments, every segment shorter than a credible token,
+                # no base64 padding/plus. Random base64 with slashes has long
+                # chunks; URL paths and CI action refs have dictionary words.
+                if "/" in tok and "=" not in tok and "+" not in tok:
+                    segs = tok.split("/")
+                    if len(segs) >= 3 and all(len(s) < 16 for s in segs):
+                        continue
                 if tok in allow or _looks_benign(tok):
                     continue
                 if shannon_entropy(tok) < thr:
