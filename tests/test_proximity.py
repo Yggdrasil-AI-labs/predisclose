@@ -64,6 +64,17 @@ class TestProximity(unittest.TestCase):
         self.assertEqual(len(tok), 32)
         self.assertEqual(proximity_findings('v = "' + tok + '"'), [])
 
+    def test_generic_assignment_does_not_suppress_specific(self):
+        # a generic-assignment-secret hit on the same span must NOT displace
+        # the specific provider finding (specific beats generic)
+        tok = "a" * 40
+        text = f'datadog_api_key = "{tok}"'
+        col = text.index(tok) + 1
+        rf = [Finding("generic-assignment-secret", "medium", "f", 1, col,
+                      tok, "m", "s")]
+        out = proximity_findings(text, rule_findings=rf)
+        self.assertIn("datadog-app-key", {f.rule_id for f in out})
+
     def test_allow_list_honored(self):
         tok = "a" * 40
         self.assertEqual(proximity_findings(f'datadog="{tok}"', allow={tok}), [])

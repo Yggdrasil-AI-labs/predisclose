@@ -87,7 +87,10 @@ def _covered_spans(rule_findings):
 def proximity_findings(text, allow=None, path="<text>", rule_findings=None, window=WINDOW):
     """Keyword-proximity findings. No-op unless called (the CLI gates on --proximity)."""
     allow = allow or set()
-    spans = _covered_spans(rule_findings)
+    # a GENERIC assignment hit must not displace a specific provider finding;
+    # only specific pattern rules suppress the proximity report for a span
+    spans = _covered_spans([f for f in (rule_findings or [])
+                            if f.rule_id != "generic-assignment-secret"])
     lowered = text.lower()
     out, seen = [], set()
     for rid, kws, kw_rx, tok_rx, sev, msg in _compiled():

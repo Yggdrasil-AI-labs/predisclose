@@ -71,5 +71,29 @@ class TestSeverity(unittest.TestCase):
         self.assertFalse(severity_at_least("low", "medium"))
 
 
+class TestGenericAssignmentPrefixes(unittest.TestCase):
+    """v0.4.12: underscore-prefixed keywords (db_password, DB_PASSWORD=,
+    s3_access_key) must match; keyword_suffix identifiers must not."""
+
+    def setUp(self):
+        self.rules, self.allow = load_rules(use_builtin=True, scan_root="/tmp")
+
+    def _hit(self, text):
+        return any(f.rule_id == "generic-assignment-secret"
+                   for f in scan_text(text, self.rules, self.allow, path="t"))
+
+    def test_underscore_prefixed_keywords_match(self):
+        for text in ('db_password = "hunter2hunter2"',
+                     "DB_PASSWORD=supersecretvalue123",
+                     'mysql_passwd: "hunter2hunter2"',
+                     's3_access_key = "ZZZZFAKEFAKEFAKE"'):
+            self.assertTrue(self._hit(text), text)
+
+    def test_keyword_suffix_identifiers_stay_silent(self):
+        # password_hash is a derived value, not a credential assignment
+        self.assertFalse(self._hit('password_hash = "a9f5c3d2e1b4a9f5"'))
+        self.assertFalse(self._hit("SERVICE_NAME=scanner-stress-service"))
+
+
 if __name__ == "__main__":
     unittest.main()

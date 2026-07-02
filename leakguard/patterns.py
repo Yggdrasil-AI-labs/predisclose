@@ -136,7 +136,7 @@ BUILTIN_PATTERNS = [
      "URL with embedded basic-auth credentials",
      "strip user:pass from the URL; inject credentials at runtime"),
     ("generic-assignment-secret",
-     r"(?i)\b(?:api[_-]?key|client[_-]?secret|secret|passwd|password|token|access[_-]?key)\b"
+     r"(?i)(?:\b|(?<=_))(?:api[_-]?key|client[_-]?secret|secret|passwd|password|token|access[_-]?key)\b"
      r"\s*[:=]\s*['\"]?[^\s'\"]{8,}['\"]?",
      "medium", "hard-coded secret assignment",
      "load from an environment variable or secret store, not source"),
