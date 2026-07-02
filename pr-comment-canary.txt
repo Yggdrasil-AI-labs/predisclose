@@ -1,1 +1,2 @@
 password = "Planted-Canary-For-PR-Comment-Path-Test-987654"
+token = "Second-Planted-Canary-Sticky-Update-Check-13579"
