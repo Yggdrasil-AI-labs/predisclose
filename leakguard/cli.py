@@ -4,6 +4,8 @@
   leakguard scan --staged        scan git staged content (pre-commit hook)
   leakguard scan --history       scan the full git history (committed-then-removed)
   leakguard github --org ACME    scan an org's public repos (post-publish audit)
+  leakguard agent [PATH ...]     scan -> judge each finding with a LOCAL model ->
+                                 act -> re-scan, looping until clean (local LLM)
 
 Add --entropy to any local scan to also flag high-entropy strings no pattern
 matched. Output formats: text (default), json, sarif (GitHub code scanning),
@@ -166,6 +168,49 @@ def _build_ai_hook(args, allow):
     return ai.make_hook(args.presidio, args.review, allow)
 
 
+_AGENT_TAG_COLOR = {"real_leak": "31", "false_positive": "36",
+                    "allowlist_candidate": "33"}  # red / cyan / yellow
+
+
+def _run_agent_cmd(args, rules, allow, root, use_color):
+    """Run the scan->triage->act->re-scan loop and print a triage report.
+    Exit 1 if any real leak is at or above --fail-on, else 0."""
+    from .agent import run_agent
+    result = run_agent(args.paths, rules, allow, root=root,
+                       max_steps=args.max_steps, apply_allow=args.apply_allow)
+    print(f"leakguard agent: {result['steps']} step(s), "
+          f"{result['files_scanned']} file(s) scanned.")
+    for t in result["triaged"]:
+        f, vd = t["finding"], t["verdict"]
+        tag = vd["verdict"]
+        if use_color:
+            tag = f"\033[{_AGENT_TAG_COLOR.get(tag, '0')}m{tag}\033[0m"
+        print(f"  {f.path}:{f.line} [{tag} {vd['confidence']:.0%}] "
+              f"{f.rule_id}: {f.match}")
+        if vd["reason"]:
+            print(f"      {vd['reason']}")
+        if vd["verdict"] == "real_leak" and vd["action"]:
+            print(f"      -> {vd['action']}")
+    if result["applied_allow"]:
+        print(f"leakguard agent: wrote {len(result['applied_allow'])} allow "
+              f"entr(y|ies) to your private rules: "
+              f"{', '.join(result['applied_allow'])}")
+    if result["proposed_allow"]:
+        print("leakguard agent: proposed allowlist entries (re-run with "
+              "--apply-allow to write them):")
+        for term in result["proposed_allow"]:
+            print(f"  + {term}")
+    if result["clean"]:
+        print("leakguard agent: clean - no findings remain.")
+    blocking = [f for f in result["real_leaks"]
+                if severity_at_least(f.severity, args.fail_on)]
+    if blocking:
+        print(f"leakguard agent: {len(blocking)} real leak(s) at or above "
+              f"'{args.fail_on}' -> failing.", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     ap = argparse.ArgumentParser(prog="leakguard", description=__doc__,
@@ -201,15 +246,35 @@ def main(argv=None):
     ip.add_argument("--path", default=".leakguard.local.json",
                     help="where to write the private rules file (default .leakguard.local.json)")
 
+    ag = sub.add_parser("agent",
+                        help="autonomous loop: scan, judge each finding with a "
+                             "LOCAL model, act, re-scan until clean (needs a local LLM)")
+    ag.add_argument("paths", nargs="*", default=["."])
+    ag.add_argument("--max-steps", type=int, default=3,
+                    help="max scan/triage/re-scan iterations (default 3)")
+    ag.add_argument("--apply-allow", action="store_true",
+                    help="append allowlist_candidate matches to your PRIVATE rules "
+                         "file (.leakguard.local.json); off by default (propose-only)")
+    ag.add_argument("--rules", action="append", default=[],
+                    help="extra rules JSON file (repeatable). Private/org rules go here.")
+    ag.add_argument("--no-builtin", action="store_true",
+                    help="disable the built-in generic patterns")
+    ag.add_argument("--fail-on", choices=["low", "medium", "high"], default="medium",
+                    help="minimum severity of a REAL leak that fails the run (default: medium)")
+    ag.add_argument("--no-color", action="store_true")
+
     args = ap.parse_args(argv)
 
     if args.cmd == "init":
         return _do_init(args.path)
-    use_color = (not args.no_color) and sys.stdout.isatty() and args.format == "text"
+    use_color = (not args.no_color) and sys.stdout.isatty() \
+        and getattr(args, "format", "text") == "text"
 
     try:
         scan_root = "."
-        if args.cmd == "scan" and not args.staged and not args.history and args.paths:
+        if args.cmd == "agent" and args.paths:
+            scan_root = args.paths[0]
+        elif args.cmd == "scan" and not args.staged and not args.history and args.paths:
             scan_root = args.paths[0]
         rules, allow = load_rules(args.rules, use_builtin=not args.no_builtin,
                                   scan_root=scan_root)
@@ -220,6 +285,9 @@ def main(argv=None):
         print("leakguard: no rules loaded (used --no-builtin with no --rules?)",
               file=sys.stderr)
         return 2
+
+    if args.cmd == "agent":
+        return _run_agent_cmd(args, rules, allow, scan_root, use_color)
 
     ai_hook = _build_ai_hook(args, allow)
 

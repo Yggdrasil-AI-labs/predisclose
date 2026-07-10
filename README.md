@@ -52,6 +52,7 @@ pass and a local-LLM reviewer on top of the regex engine; see below.
 | Entropy detection | yes (opt-in) | yes | yes | yes |
 | Live credential verification | opt-in (~10 providers) | no | yes (800+) | no |
 | Local-LLM semantic review | yes | no | no | no |
+| Agentic triage loop (scan → judge → act → re-scan, local) | yes | no | no | no |
 | SARIF / GitHub code scanning | yes | yes | partial | no |
 | pre-commit framework hook | yes | yes | yes | yes |
 | Core runtime dependencies | none | Go binary | Go binary | Python deps |
@@ -280,6 +281,48 @@ leakguard scan . --review
 Both layers are detection-only and run locally by default. The LLM reviewer sends
 file content to whatever endpoint you configure, so keep it pointed at a local
 model unless you have decided otherwise.
+
+## Agent mode (`leakguard agent`)
+
+`scan` finds and reports; `agent` runs the same detection as a loop that also
+*acts*. It scans, asks a LOCAL model to judge each finding, acts on the verdict,
+then re-scans, repeating until the artifact is clean or a step budget runs out.
+LeakGuard's job is unchanged; this is the one-shot scan turned into an agent.
+
+```
+leakguard agent .
+leakguard agent . --apply-allow --max-steps 5
+```
+
+Each finding is classified as one of:
+
+- `real_leak`: genuinely sensitive; reported with a rotation/scrub action and
+  counted toward the exit code.
+- `false_positive`: the pattern matched but it is not sensitive (a test fixture,
+  a documentation example, an obvious placeholder). Set aside with a reason.
+- `allowlist_candidate`: a real, correct match that is meant to be public (a
+  published handle or address). Proposed as an `allow` entry.
+
+The control flow is bounded Python; the model provides judgment only, so it
+works with small local models that do not do native tool-calling. It is
+**local-first**: it reuses the same configuration as `--review`
+(`LEAKGUARD_LLM_BASE`, `LEAKGUARD_LLM_MODEL`, and the other `LEAKGUARD_LLM_*`
+vars; default endpoint is a localhost Ollama). It is **conservative**: any
+finding the model cannot classify (endpoint down, unparseable reply) stays a
+`real_leak`, so the agent never hides a possible leak.
+
+Like the rest of leakguard, agent mode is **detection / proposal-only and never
+edits your scanned content**. By default `allowlist_candidate` matches are only
+*proposed*. With `--apply-allow` it appends them to your private
+`.leakguard.local.json` (configuration, gitignored) and re-scans, which is what
+lets the loop reach a clean state. It exits `1` if any `real_leak` is at or
+above `--fail-on` (default `medium`), else `0`.
+
+```
+export LEAKGUARD_LLM_BASE=http://localhost:11434/v1
+export LEAKGUARD_LLM_MODEL=gemma3:12b
+leakguard agent ./path-about-to-be-published
+```
 
 ## Pre-commit hook
 
