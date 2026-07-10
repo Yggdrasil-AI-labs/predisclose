@@ -338,7 +338,7 @@ Or via the [pre-commit framework](https://pre-commit.com), add to your
 ```yaml
 repos:
   - repo: https://github.com/Yggdrasil-AI-labs/leakguard
-    rev: v0.4.8
+    rev: v0.6.0
     hooks:
       - id: leakguard
 ```
