@@ -41,7 +41,10 @@ BUILTIN_PATTERNS = [
     # ---- SaaS / AI-provider API keys ----
     ("anthropic-api-key", r"\bsk-ant-[A-Za-z0-9_\-]{20,}\b", "high",
      "Anthropic API key", "revoke the key in the Anthropic console"),
-    ("openai-api-key", r"\bsk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{32,}\b", "high",
+    # (?!ant-) below so an Anthropic key (sk-ant-...) is not also matched as
+    # OpenAI; it is covered by anthropic-api-key here. Without it one key
+    # produced two findings, the second mislabeling the provider.
+    ("openai-api-key", r"\bsk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{32,}\b", "high",
      "OpenAI API key", "revoke the key in the OpenAI dashboard"),
     ("huggingface-token", r"\bhf_[A-Za-z0-9]{34}\b", "high",
      "Hugging Face access token", "revoke the token"),

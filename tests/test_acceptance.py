@@ -121,6 +121,15 @@ class TestPrecision(unittest.TestCase):
             got = {f.rule_id for f in scan_text(text, self.rules, self.allow)}
             self.assertEqual(got, set(), f"false positive in {name!r}: {got}")
 
+    def test_anthropic_key_not_double_matched_as_openai(self):
+        # An Anthropic key satisfies the OpenAI shape too; it must be
+        # reported once, by the anthropic rule only, or the finding count
+        # and provider label are both wrong.
+        got = {f.rule_id for f in scan_text("k = sk-ant-api03-" + _A * 40,
+                                            self.rules, self.allow)}
+        self.assertIn("anthropic-api-key", got)
+        self.assertNotIn("openai-api-key", got)
+
 
 class TestEntropyDiscipline(unittest.TestCase):
     def setUp(self):
