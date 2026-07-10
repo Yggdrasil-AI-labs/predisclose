@@ -318,6 +318,13 @@ edits your scanned content**. By default `allowlist_candidate` matches are only
 lets the loop reach a clean state. It exits `1` if any `real_leak` is at or
 above `--fail-on` (default `medium`), else `0`.
 
+To be told about leaks out of band, add `--notify-webhook <url>` (or set
+`LEAKGUARD_WEBHOOK`). When the agent finishes with a confirmed `real_leak` at or
+above `--fail-on`, it POSTs a summary to Slack, Discord, or a generic webhook
+(pick with `--notify-style`). Only the leaks the agent *kept* are sent, not the
+false positives or allowlist candidates it filtered out, so the alert is the
+high-signal subset rather than the raw scan.
+
 ```
 export LEAKGUARD_LLM_BASE=http://localhost:11434/v1
 export LEAKGUARD_LLM_MODEL=gemma3:12b
@@ -338,7 +345,7 @@ Or via the [pre-commit framework](https://pre-commit.com), add to your
 ```yaml
 repos:
   - repo: https://github.com/Yggdrasil-AI-labs/leakguard
-    rev: v0.6.0
+    rev: v0.6.1
     hooks:
       - id: leakguard
 ```

@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from leakguard import agent, ai
+from leakguard import agent, ai, cli
 from leakguard.engine import Finding
 
 
@@ -121,6 +121,43 @@ class TestAgentLoop(unittest.TestCase):
                                   scanner=self._scanner_for(f),
                                   reader=lambda p: "x")
         self.assertLessEqual(res["steps"], 2)
+
+
+class TestAgentWebhook(unittest.TestCase):
+    """End-to-end through cli.main: the agent pushes only the confirmed,
+    blocking real leaks to the webhook. cli imports `notify` into its own
+    namespace, so that is the patch target."""
+
+    def test_pushes_confirmed_blocking_leak(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "conf.txt"), "w", encoding="utf-8") as fh:
+                fh.write('github_token = "ghp_' + "a" * 36 + '"\n')
+            calls = []
+            with mock.patch.object(ai, "_http_post_json", _verdict_by_match({})), \
+                 mock.patch.object(cli, "notify",
+                                   lambda url, summary, findings, style=None:
+                                   calls.append((url, findings)) or True):
+                rc = cli.main(["agent", d, "--notify-webhook", "http://hook",
+                               "--no-color", "--fail-on", "high"])
+            self.assertEqual(rc, 1)
+            self.assertEqual(len(calls), 1)
+            url, findings = calls[0]
+            self.assertEqual(url, "http://hook")
+            self.assertTrue(any(f.rule_id == "github-token" for f in findings))
+
+    def test_no_push_when_nothing_blocks(self):
+        # An allowlist_candidate is not a real_leak, so nothing should be pushed.
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "c.txt"), "w", encoding="utf-8") as fh:
+                fh.write("email = hello@publicco.io\n")
+            calls = []
+            with mock.patch.object(ai, "_http_post_json", _verdict_by_match(
+                    {"hello@publicco.io": "allowlist_candidate"})), \
+                 mock.patch.object(cli, "notify",
+                                   lambda *a, **k: calls.append(a) or True):
+                cli.main(["agent", d, "--notify-webhook", "http://hook",
+                          "--no-color", "--fail-on", "low"])
+            self.assertEqual(calls, [])
 
 
 if __name__ == "__main__":

@@ -204,6 +204,14 @@ def _run_agent_cmd(args, rules, allow, root, use_color):
         print("leakguard agent: clean - no findings remain.")
     blocking = [f for f in result["real_leaks"]
                 if severity_at_least(f.severity, args.fail_on)]
+    # Push only the CONFIRMED real leaks the agent kept - not the false positives
+    # or allowlist candidates it filtered out. That noise reduction is the point
+    # of routing the agent through the webhook instead of a raw scan.
+    webhook = args.notify_webhook or webhook_from_env()
+    if webhook and blocking:
+        label = f"agent triage ({result['steps']} step(s))"
+        notify(webhook, build_summary_text(blocking, result["files_scanned"], label),
+               blocking, style=args.notify_style)
     if blocking:
         print(f"leakguard agent: {len(blocking)} real leak(s) at or above "
               f"'{args.fail_on}' -> failing.", file=sys.stderr)
@@ -261,6 +269,12 @@ def main(argv=None):
                     help="disable the built-in generic patterns")
     ag.add_argument("--fail-on", choices=["low", "medium", "high"], default="medium",
                     help="minimum severity of a REAL leak that fails the run (default: medium)")
+    ag.add_argument("--notify-webhook", default="", metavar="URL",
+                    help="POST a summary of the CONFIRMED real leaks to this webhook "
+                         "when any is at or above --fail-on (or set LEAKGUARD_WEBHOOK)")
+    ag.add_argument("--notify-style", choices=["slack", "discord", "generic"],
+                    default=None,
+                    help="webhook payload style (default slack, or LEAKGUARD_WEBHOOK_STYLE)")
     ag.add_argument("--no-color", action="store_true")
 
     args = ap.parse_args(argv)
