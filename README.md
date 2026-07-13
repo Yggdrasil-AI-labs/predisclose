@@ -115,7 +115,18 @@ Audit published repos read-only (an org, a user, or specific repos):
 
 ```
 predisclose github --org your-org
+predisclose github --user your-username
 predisclose github --repo owner/name --repo owner/other
+```
+
+By default this reads public repos only, unauthenticated. Set `GH_TOKEN` (or
+`GITHUB_TOKEN`) and add `--include-private` to also scan private repos you have
+access to. Both the repo listing and the file contents go through the
+authenticated GitHub API, so private content is read the same way as public
+(the public CDN does not serve private files):
+
+```
+GH_TOKEN=ghp_... predisclose github --org your-org --include-private
 ```
 
 Adopt predisclose into a repo that already has findings: snapshot them as a
