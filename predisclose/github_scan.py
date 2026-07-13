@@ -55,8 +55,11 @@ def list_repos(orgs=None, users=None, repos=None, include_private=False):
         seen.add(fn)
         out.append((fn, meta.get("default_branch") or "main"))
 
+    # type=all returns public+private when authenticated (GH_TOKEN); with no
+    # token GitHub still only returns public, so this stays safe by default.
+    org_type = "all" if include_private else "public"
     for org in (orgs or []):
-        data, err = _api(f"/orgs/{org}/repos?per_page=100&type=public")
+        data, err = _api(f"/orgs/{org}/repos?per_page=100&type={org_type}")
         if err or not isinstance(data, list):
             errors.append(f"org {org}: {err or 'unexpected response'}")
             continue
