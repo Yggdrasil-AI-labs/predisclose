@@ -1,7 +1,7 @@
 {
   "_comment": [
-    "TEMPLATE ONLY. Copy this to a PRIVATE, GITIGNORED file (e.g. .leakguard.local.json",
-    "at your repo root, or anywhere and point LEAKGUARD_RULES / --rules at it).",
+    "TEMPLATE ONLY. Copy this to a PRIVATE, GITIGNORED file (e.g. .predisclose.local.json",
+    "at your repo root, or anywhere and point PREDISCLOSE_RULES / --rules at it).",
     "Put your real internal identifiers here - they must NOT be committed.",
     "All values below are deliberately fake placeholders.",
     "",

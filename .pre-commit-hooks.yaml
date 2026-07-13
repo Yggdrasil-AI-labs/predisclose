@@ -2,20 +2,20 @@
 # Consumers add this to their own .pre-commit-config.yaml:
 #
 #   repos:
-#     - repo: https://github.com/Yggdrasil-AI-labs/leakguard
+#     - repo: https://github.com/Yggdrasil-AI-labs/predisclose
 #       rev: v0.2.0
 #       hooks:
-#         - id: leakguard
+#         - id: predisclose
 #
 # The hook scans the STAGED content of the commit and blocks on findings at or
-# above 'medium'. It auto-loads a private .leakguard.local.json at the repo root.
+# above 'medium'. It auto-loads a private .predisclose.local.json at the repo root.
 # To change the threshold or add entropy detection, override args, e.g.:
-#         - id: leakguard
+#         - id: predisclose
 #           args: [--fail-on, high, --entropy]
-- id: leakguard
-  name: leakguard (secret / PII / disclosure scan)
+- id: predisclose
+  name: predisclose (secret / PII / disclosure scan)
   description: Scan staged content for secrets, PII, and internal identifiers before commit.
-  entry: leakguard scan --staged
+  entry: predisclose scan --staged
   language: python
   pass_filenames: false
   require_serial: true

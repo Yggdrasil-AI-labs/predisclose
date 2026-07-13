@@ -1,6 +1,6 @@
-# leakguard
+# predisclose
 
-[![leakguard](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml/badge.svg)](https://github.com/Yggdrasil-AI-labs/leakguard/actions/workflows/leakguard.yml)
+[![predisclose](https://github.com/Yggdrasil-AI-labs/predisclose/actions/workflows/predisclose.yml/badge.svg)](https://github.com/Yggdrasil-AI-labs/predisclose/actions/workflows/predisclose.yml)
 
 > [!WARNING]
 > **Experimental, pre-1.0, under active development.** Detection rules, CLI flags,
@@ -9,7 +9,7 @@
 > guarantee, and review findings yourself.
 
 Catch internal identifiers, secrets, and PII before they leak into public
-artifacts. leakguard scans local files, git staged content (as a pre-commit
+artifacts. predisclose scans local files, git staged content (as a pre-commit
 hook), the full git history, and already-published GitHub repos, then reports
 each hit with a line reference and a suggested fix. It is detection-only; it
 never edits your content. The core is pure Python standard library with zero
@@ -18,7 +18,7 @@ runtime dependencies. The optional AI layers are installed separately.
 ## The safety model
 
 The thing most likely to leak from a secret-scanner is its own rule list, because
-that list is an inventory of exactly what you are trying to hide. leakguard is
+that list is an inventory of exactly what you are trying to hide. predisclose is
 built so that does not happen:
 
 - The repo ships only generic patterns (cloud keys, private-key blocks, RFC1918
@@ -26,23 +26,23 @@ built so that does not happen:
   organization-specific values.
 - Your organization-specific patterns (internal hostnames, private project names,
   people, locations) live in a private rules file you keep out of version control.
-  leakguard loads it at runtime. It is gitignored by default.
+  predisclose loads it at runtime. It is gitignored by default.
 
-leakguard targets disclosure, not only credentials. A generic secret scanner
-answers "did I commit an AWS key?". leakguard also answers "did I leak the name of
+predisclose targets disclosure, not only credentials. A generic secret scanner
+answers "did I commit an AWS key?". predisclose also answers "did I leak the name of
 an internal host, an unreleased project, or a person?", which is the kind of
 attribution trail a clean-looking public repo, blog post, or AI-generated draft
 can still carry. You cannot answer that second question with a public rule list,
-so leakguard keeps the engine public and the inventory private.
+so predisclose keeps the engine public and the inventory private.
 
 It also applies to AI-assisted writing and code generation, where internal
-identifiers can slip into generated output: run leakguard over generated artifacts
-before they ship. Optional local AI layers (`leakguard[ai]`) add a Presidio PII
+identifiers can slip into generated output: run predisclose over generated artifacts
+before they ship. Optional local AI layers (`predisclose[ai]`) add a Presidio PII
 pass and a local-LLM reviewer on top of the regex engine; see below.
 
 ## How it compares
 
-| | leakguard | gitleaks | trufflehog | detect-secrets |
+| | predisclose | gitleaks | trufflehog | detect-secrets |
 |---|---|---|---|---|
 | Generic secret detectors | ~63 | ~140 | 800+ | curated |
 | Private org-identifier rules, kept out of the repo | yes | no | no | no |
@@ -57,7 +57,7 @@ pass and a local-LLM reviewer on top of the regex engine; see below.
 | pre-commit framework hook | yes | yes | yes | yes |
 | Core runtime dependencies | none | Go binary | Go binary | Python deps |
 
-leakguard does not aim to match the big scanners on raw credential breadth;
+predisclose does not aim to match the big scanners on raw credential breadth;
 trufflehog (800+ detectors, with live verification) and gitleaks cover that. Its
 focus is the private-inventory model and disclosure coverage: catching an internal
 hostname, an unreleased project name, or a person, with the rule list kept
@@ -70,7 +70,7 @@ needs to catch internal identifiers and secrets before they go public.
 ## Install
 
 ```
-pip install leakguard         # or: pip install . from a clone
+pip install predisclose         # or: pip install . from a clone
 ```
 
 Python 3.8+, standard library only (the core has no runtime dependencies).
@@ -78,7 +78,7 @@ Python 3.8+, standard library only (the core has no runtime dependencies).
 The optional AI layers add dependencies and are installed separately:
 
 ```
-pip install 'leakguard[ai]'   # presidio-analyzer + spacy
+pip install 'predisclose[ai]'   # presidio-analyzer + spacy
 python -m spacy download en_core_web_lg
 ```
 
@@ -87,57 +87,57 @@ python -m spacy download en_core_web_lg
 Scan a tree:
 
 ```
-leakguard scan .
+predisclose scan .
 ```
 
 Scan only what is staged for commit (used by the pre-commit hook):
 
 ```
-leakguard scan --staged
+predisclose scan --staged
 ```
 
 Scan the full git history. This finds secrets that were committed and later
 removed; each finding is tagged with the short SHA of the commit it was seen in:
 
 ```
-leakguard scan --history
-leakguard scan --history --since v1.0.0      # only commits in v1.0.0..HEAD
+predisclose scan --history
+predisclose scan --history --since v1.0.0      # only commits in v1.0.0..HEAD
 ```
 
 Also flag high-entropy strings that no pattern matched (opt-in; see below):
 
 ```
-leakguard scan . --entropy
-leakguard scan . --entropy --entropy-threshold 4.5
+predisclose scan . --entropy
+predisclose scan . --entropy --entropy-threshold 4.5
 ```
 
 Audit published repos read-only (an org, a user, or specific repos):
 
 ```
-leakguard github --org your-org
-leakguard github --repo owner/name --repo owner/other
+predisclose github --org your-org
+predisclose github --repo owner/name --repo owner/other
 ```
 
-Adopt leakguard into a repo that already has findings: snapshot them as a
+Adopt predisclose into a repo that already has findings: snapshot them as a
 baseline, then get alerted only on new leaks. The baseline stores hashes, not the
 secrets, so it is safe to commit:
 
 ```
-leakguard scan . --baseline .leakguard-baseline.json --update-baseline   # snapshot
-leakguard scan . --baseline .leakguard-baseline.json                     # only new
+predisclose scan . --baseline .predisclose-baseline.json --update-baseline   # snapshot
+predisclose scan . --baseline .predisclose-baseline.json                     # only new
 ```
 
-Scaffold a private rules file (writes `.leakguard.local.json` and gitignores it):
+Scaffold a private rules file (writes `.predisclose.local.json` and gitignores it):
 
 ```
-leakguard init
+predisclose init
 ```
 
 Check whether matched credentials are live (opt-in; makes network calls only for
 supported types):
 
 ```
-leakguard scan . --verify
+predisclose scan . --verify
 ```
 
 Exit code is `0` when clean (or only findings below the threshold) and `1` when
@@ -149,8 +149,8 @@ for how findings reach people.
 
 ## Private rules
 
-Copy `rules/example.rules.json` to `.leakguard.local.json` at your repo root (or
-anywhere, and point `--rules` / `LEAKGUARD_RULES` at it). It is auto-loaded and
+Copy `rules/example.rules.json` to `.predisclose.local.json` at your repo root (or
+anywhere, and point `--rules` / `PREDISCLOSE_RULES` at it). It is auto-loaded and
 gitignored. Format:
 
 ```json
@@ -189,7 +189,7 @@ git object hashes).
 
 ## Verification (`--verify`)
 
-By default leakguard reports that a string looks like a credential. `--verify`
+By default predisclose reports that a string looks like a credential. `--verify`
 goes one step further for a small set of providers: it asks the provider whether
 the credential is live, so you can tell an active leak from a long-dead one. It is
 opt-in, makes network calls only for supported types, and does not change the exit
@@ -209,17 +209,17 @@ uses stdlib `urllib` only, and sends the credential only to its own provider.
 Some secrets have no distinctive prefix; they are bare hex/alnum tokens (Datadog,
 Algolia, Cloudflare, Heroku, JFrog, Facebook, Mapbox, Twitter). A regex for "32
 hex chars" alone would match many hashes, so these are off by default. With
-`--proximity`, leakguard flags such a token only when a provider keyword
+`--proximity`, predisclose flags such a token only when a provider keyword
 ("datadog", "algolia", and so on) sits within about 30 characters on the same
 line, the same keyword-gating approach gitleaks uses. The keyword requirement
 keeps false positives down; a bare token with no nearby provider name is not
 flagged.
 
 ```
-leakguard scan . --proximity
+predisclose scan . --proximity
 ```
 
-## Optional AI layers (`leakguard[ai]`)
+## Optional AI layers (`predisclose[ai]`)
 
 Two local, opt-in layers supplement the regex engine. They produce the same
 findings and flow through the same exit-code path, so they add coverage on top of
@@ -230,13 +230,13 @@ is skipped (it does not crash the scan).
 Enable them with flags on either `scan` or `github`:
 
 ```
-pip install 'leakguard[ai]'
+pip install 'predisclose[ai]'
 python -m spacy download en_core_web_lg
 
-leakguard scan . --presidio              # Presidio PII pass
-leakguard scan . --review                # local-LLM reviewer
-leakguard scan . --presidio --review     # both, merged with the regex findings
-leakguard github --org your-org --presidio --review
+predisclose scan . --presidio              # Presidio PII pass
+predisclose scan . --review                # local-LLM reviewer
+predisclose scan . --presidio --review     # both, merged with the regex findings
+predisclose github --org your-org --presidio --review
 ```
 
 ### Presidio PII pass (`--presidio`)
@@ -244,13 +244,13 @@ leakguard github --org your-org --presidio --review
 Runs Microsoft [Presidio](https://github.com/microsoft/presidio) as a second PII
 detector (names, phone numbers, credit cards, SSNs, IBANs, and more). Each
 detected entity becomes a finding with `rule_id` `presidio:<ENTITY_TYPE>`; entity
-types map to leakguard severities and the engine's `allow` list is honored. Hits
+types map to predisclose severities and the engine's `allow` list is honored. Hits
 below a confidence threshold are dropped.
 
 | env | default | meaning |
 | --- | --- | --- |
-| `LEAKGUARD_PRESIDIO_THRESHOLD` | `0.5` | drop hits below this confidence score |
-| `LEAKGUARD_PRESIDIO_LANG` | `en` | spaCy language |
+| `PREDISCLOSE_PRESIDIO_THRESHOLD` | `0.5` | drop hits below this confidence score |
+| `PREDISCLOSE_PRESIDIO_LANG` | `en` | spaCy language |
 
 ### Local-LLM reviewer (`--review`)
 
@@ -265,33 +265,33 @@ default port). Pointing it at a remote/cloud endpoint is opt-in via env.
 
 | env | default | meaning |
 | --- | --- | --- |
-| `LEAKGUARD_LLM_BASE` | `http://localhost:11434/v1` | OpenAI-compatible base URL |
-| `LEAKGUARD_LLM_MODEL` | `llama3.1` | model name |
-| `LEAKGUARD_LLM_KEY` | _(unset)_ | bearer token, only for endpoints that need auth |
-| `LEAKGUARD_LLM_TIMEOUT` | `60` | per-request timeout, seconds |
-| `LEAKGUARD_LLM_MAX_CHARS` | `16000` | max chars of a file sent per request |
+| `PREDISCLOSE_LLM_BASE` | `http://localhost:11434/v1` | OpenAI-compatible base URL |
+| `PREDISCLOSE_LLM_MODEL` | `llama3.1` | model name |
+| `PREDISCLOSE_LLM_KEY` | _(unset)_ | bearer token, only for endpoints that need auth |
+| `PREDISCLOSE_LLM_TIMEOUT` | `60` | per-request timeout, seconds |
+| `PREDISCLOSE_LLM_MAX_CHARS` | `16000` | max chars of a file sent per request |
 
 ```
 # point at any local OpenAI-compatible server
-export LEAKGUARD_LLM_BASE=http://localhost:11434/v1
-export LEAKGUARD_LLM_MODEL=qwen2.5-coder
-leakguard scan . --review
+export PREDISCLOSE_LLM_BASE=http://localhost:11434/v1
+export PREDISCLOSE_LLM_MODEL=qwen2.5-coder
+predisclose scan . --review
 ```
 
 Both layers are detection-only and run locally by default. The LLM reviewer sends
 file content to whatever endpoint you configure, so keep it pointed at a local
 model unless you have decided otherwise.
 
-## Agent mode (`leakguard agent`)
+## Agent mode (`predisclose agent`)
 
 `scan` finds and reports; `agent` runs the same detection as a loop that also
 *acts*. It scans, asks a LOCAL model to judge each finding, acts on the verdict,
 then re-scans, repeating until the artifact is clean or a step budget runs out.
-LeakGuard's job is unchanged; this is the one-shot scan turned into an agent.
+Predisclose's job is unchanged; this is the one-shot scan turned into an agent.
 
 ```
-leakguard agent .
-leakguard agent . --apply-allow --max-steps 5
+predisclose agent .
+predisclose agent . --apply-allow --max-steps 5
 ```
 
 Each finding is classified as one of:
@@ -306,29 +306,29 @@ Each finding is classified as one of:
 The control flow is bounded Python; the model provides judgment only, so it
 works with small local models that do not do native tool-calling. It is
 **local-first**: it reuses the same configuration as `--review`
-(`LEAKGUARD_LLM_BASE`, `LEAKGUARD_LLM_MODEL`, and the other `LEAKGUARD_LLM_*`
+(`PREDISCLOSE_LLM_BASE`, `PREDISCLOSE_LLM_MODEL`, and the other `PREDISCLOSE_LLM_*`
 vars; default endpoint is a localhost Ollama). It is **conservative**: any
 finding the model cannot classify (endpoint down, unparseable reply) stays a
 `real_leak`, so the agent never hides a possible leak.
 
-Like the rest of leakguard, agent mode is **detection / proposal-only and never
+Like the rest of predisclose, agent mode is **detection / proposal-only and never
 edits your scanned content**. By default `allowlist_candidate` matches are only
 *proposed*. With `--apply-allow` it appends them to your private
-`.leakguard.local.json` (configuration, gitignored) and re-scans, which is what
+`.predisclose.local.json` (configuration, gitignored) and re-scans, which is what
 lets the loop reach a clean state. It exits `1` if any `real_leak` is at or
 above `--fail-on` (default `medium`), else `0`.
 
 To be told about leaks out of band, add `--notify-webhook <url>` (or set
-`LEAKGUARD_WEBHOOK`). When the agent finishes with a confirmed `real_leak` at or
+`PREDISCLOSE_WEBHOOK`). When the agent finishes with a confirmed `real_leak` at or
 above `--fail-on`, it POSTs a summary to Slack, Discord, or a generic webhook
 (pick with `--notify-style`). Only the leaks the agent *kept* are sent, not the
 false positives or allowlist candidates it filtered out, so the alert is the
 high-signal subset rather than the raw scan.
 
 ```
-export LEAKGUARD_LLM_BASE=http://localhost:11434/v1
-export LEAKGUARD_LLM_MODEL=gemma3:12b
-leakguard agent ./path-about-to-be-published
+export PREDISCLOSE_LLM_BASE=http://localhost:11434/v1
+export PREDISCLOSE_LLM_MODEL=gemma3:12b
+predisclose agent ./path-about-to-be-published
 ```
 
 ## Pre-commit hook
@@ -344,10 +344,10 @@ Or via the [pre-commit framework](https://pre-commit.com), add to your
 
 ```yaml
 repos:
-  - repo: https://github.com/Yggdrasil-AI-labs/leakguard
+  - repo: https://github.com/Yggdrasil-AI-labs/predisclose
     rev: v0.6.1
     hooks:
-      - id: leakguard
+      - id: predisclose
 ```
 
 Both scan staged content and block the commit on findings at or above the
@@ -355,35 +355,35 @@ threshold (default `medium`). Bypass once with `git commit --no-verify`.
 
 ## CI
 
-`.github/workflows/leakguard.yml` runs a scan on every push and pull request and
+`.github/workflows/predisclose.yml` runs a scan on every push and pull request and
 runs a gating scan that fails the job on findings at or above `medium`. To use
-private patterns in CI, store the rules JSON as a `LEAKGUARD_RULES_JSON`
-repository secret; the workflow writes it to `.leakguard.local.json` at runtime
+private patterns in CI, store the rules JSON as a `PREDISCLOSE_RULES_JSON`
+repository secret; the workflow writes it to `.predisclose.local.json` at runtime
 (it is never committed).
 
 ## Reporting and alerts
 
-leakguard surfaces a finding four ways; the bundled workflow wires up the first
+predisclose surfaces a finding four ways; the bundled workflow wires up the first
 three out of the box.
 
 - Exit code: `1` when any finding is at or above `--fail-on` (default `medium`),
   else `0`. This is what fails a CI job or blocks a commit.
-- Job summary: `leakguard scan . --format md` prints a findings table; the
+- Job summary: `predisclose scan . --format md` prints a findings table; the
   workflow appends it to `$GITHUB_STEP_SUMMARY`, so every Actions run page shows
   it (matched values are redacted).
 - Pull-request comment: the workflow posts and updates one sticky comment with
   that table on each PR, so reviewers see findings inline.
 - SARIF / Security tab: `--format sarif`, uploaded via
   `github/codeql-action/upload-sarif`; alerts show under Security, Code scanning.
-- Webhook push: `--notify-webhook <url>` (or the `LEAKGUARD_WEBHOOK` env var)
+- Webhook push: `--notify-webhook <url>` (or the `PREDISCLOSE_WEBHOOK` env var)
   POSTs a summary to Slack, Discord, or a generic webhook when findings hit the
   threshold. Stdlib only; meant for scheduled scans with no PR to comment on. Pick
   the shape with `--notify-style slack|discord|generic` (or
-  `LEAKGUARD_WEBHOOK_STYLE`).
+  `PREDISCLOSE_WEBHOOK_STYLE`).
 
 ### Permissions and tokens you need
 
-The bundled workflow already requests these. If you wire leakguard into your own
+The bundled workflow already requests these. If you wire predisclose into your own
 workflow, you must grant them yourself. The automatic `GITHUB_TOKEN` Actions
 injects is read-only by default, so the `write` scopes below are required.
 
@@ -392,8 +392,8 @@ injects is read-only by default, so the `write` scopes below are required.
 | Exit code / job summary | nothing | works out of the box |
 | SARIF, Security tab | `permissions: security-events: write` | GitHub-hosted code scanning |
 | PR comment | `permissions: pull-requests: write` | uses the built-in `GITHUB_TOKEN`; no PAT or extra secret |
-| Webhook push | a `LEAKGUARD_WEBHOOK` secret (your incoming-webhook URL) | uncomment the "Notify webhook" step to enable |
-| Private org rules | a `LEAKGUARD_RULES_JSON` secret | written to `.leakguard.local.json` at runtime, never committed |
+| Webhook push | a `PREDISCLOSE_WEBHOOK` secret (your incoming-webhook URL) | uncomment the "Notify webhook" step to enable |
+| Private org rules | a `PREDISCLOSE_RULES_JSON` secret | written to `.predisclose.local.json` at runtime, never committed |
 
 You do not create or store a personal access token for the PR comment or SARIF
 upload; both use the `GITHUB_TOKEN` GitHub injects automatically. You only grant

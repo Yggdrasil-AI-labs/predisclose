@@ -4,7 +4,7 @@ These are universal secret/identifier shapes (cloud keys, private keys, private
 IP ranges, common token formats). They contain NO organization-specific values.
 Anything specific to your infrastructure (internal hostnames, private tool names,
 people, locations) belongs in a private rules file loaded at runtime via --rules
-or an auto-loaded `.leakguard.local.json`, never here, never in the repo.
+or an auto-loaded `.predisclose.local.json`, never here, never in the repo.
 
 Each entry: (id, regex, severity, message, suggestion). Severity is one of
 "low" | "medium" | "high".

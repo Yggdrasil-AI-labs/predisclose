@@ -1,4 +1,4 @@
-"""Baseline support: adopt leakguard into a repo that already has findings.
+"""Baseline support: adopt predisclose into a repo that already has findings.
 
 A baseline records a fingerprint of each current finding. On later scans, any
 finding whose fingerprint is in the baseline is suppressed, so only NEW leaks are
@@ -41,8 +41,8 @@ def write_baseline(path, findings):
     """Write a baseline covering all `findings`. Returns the count written."""
     fps = sorted({fingerprint(f) for f in findings})
     doc = {
-        "leakguard_baseline_version": BASELINE_VERSION,
-        "generated_by": f"leakguard {__version__}",
+        "predisclose_baseline_version": BASELINE_VERSION,
+        "generated_by": f"predisclose {__version__}",
         "fingerprints": fps,
     }
     with open(path, "w", encoding="utf-8") as fh:

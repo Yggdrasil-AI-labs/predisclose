@@ -1,5 +1,5 @@
 # Private, org-specific rules - NEVER commit these. They are your secret inventory.
-.leakguard.local.json
+.predisclose.local.json
 *.local.json
 *.local.rules.json
 

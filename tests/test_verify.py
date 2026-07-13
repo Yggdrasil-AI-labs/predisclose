@@ -1,10 +1,10 @@
-"""leakguard live-verification tests (no network; urlopen is mocked)."""
+"""predisclose live-verification tests (no network; urlopen is mocked)."""
 import unittest
 import urllib.error
 from unittest import mock
 
-from leakguard.engine import Finding
-from leakguard import verify as V
+from predisclose.engine import Finding
+from predisclose import verify as V
 
 
 class FakeResp:

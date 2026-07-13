@@ -1,9 +1,9 @@
-"""leakguard SARIF output tests (stdlib unittest)."""
+"""predisclose SARIF output tests (stdlib unittest)."""
 import json
 import unittest
 
-from leakguard.engine import Finding
-from leakguard.sarif import build_sarif, redact
+from predisclose.engine import Finding
+from predisclose.sarif import build_sarif, redact
 
 SECRET = "AKIA1234567890ABCDEF"
 
@@ -16,7 +16,7 @@ class TestSarif(unittest.TestCase):
         doc = build_sarif([f], tool_version="0.2.0")
         self.assertEqual(doc["version"], "2.1.0")
         driver = doc["runs"][0]["tool"]["driver"]
-        self.assertEqual(driver["name"], "leakguard")
+        self.assertEqual(driver["name"], "predisclose")
         self.assertEqual(driver["version"], "0.2.0")
         self.assertEqual(len(driver["rules"]), 1)
         res = doc["runs"][0]["results"][0]

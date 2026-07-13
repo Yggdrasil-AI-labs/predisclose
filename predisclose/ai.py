@@ -1,4 +1,4 @@
-"""Optional AI detection layers for leakguard (the ``leakguard[ai]`` extra).
+"""Optional AI detection layers for predisclose (the ``predisclose[ai]`` extra).
 
 These are LOCAL, opt-in supplements to the regex engine. They emit the same
 ``Finding`` objects and flow through the same exit-code path, so ``--presidio``
@@ -9,7 +9,7 @@ Layer 1 - Presidio:
     Microsoft ``presidio-analyzer`` (with a spaCy model) as a second PII
     detector. Each ``RecognizerResult`` becomes a ``Finding``; entity types map
     to severities and the engine's ``allow`` list is honored. Presidio is
-    lazy-imported - if the extra is not installed, leakguard prints a one-line
+    lazy-imported - if the extra is not installed, predisclose prints a one-line
     install hint and skips the layer. The zero-dependency core never breaks.
 
 Layer 2 - Local-LLM review:
@@ -22,14 +22,14 @@ Layer 2 - Local-LLM review:
     env vars.
 
 Environment (all optional):
-    LEAKGUARD_LLM_BASE            OpenAI-compatible base URL
+    PREDISCLOSE_LLM_BASE            OpenAI-compatible base URL
                                   (default ``http://localhost:11434/v1``)
-    LEAKGUARD_LLM_MODEL           model name (default ``llama3.1``)
-    LEAKGUARD_LLM_KEY             bearer token, only for endpoints that need auth
-    LEAKGUARD_LLM_TIMEOUT         per-request timeout, seconds (default ``60``)
-    LEAKGUARD_LLM_MAX_CHARS       max chars of a file sent for review (default ``16000``)
-    LEAKGUARD_PRESIDIO_THRESHOLD  drop Presidio hits below this score (default ``0.5``)
-    LEAKGUARD_PRESIDIO_LANG       spaCy language (default ``en``)
+    PREDISCLOSE_LLM_MODEL           model name (default ``llama3.1``)
+    PREDISCLOSE_LLM_KEY             bearer token, only for endpoints that need auth
+    PREDISCLOSE_LLM_TIMEOUT         per-request timeout, seconds (default ``60``)
+    PREDISCLOSE_LLM_MAX_CHARS       max chars of a file sent for review (default ``16000``)
+    PREDISCLOSE_PRESIDIO_THRESHOLD  drop Presidio hits below this score (default ``0.5``)
+    PREDISCLOSE_PRESIDIO_LANG       spaCy language (default ``en``)
 
 No organization-specific values live here. Your real endpoint, model, and any
 custom Presidio recognizers belong in your private env/config, not this repo.
@@ -43,12 +43,12 @@ from .engine import Finding, SEVERITY_ORDER
 
 
 def _note(msg):
-    print(f"leakguard: {msg}", file=sys.stderr)
+    print(f"predisclose: {msg}", file=sys.stderr)
 
 
 # ---- Presidio (layer 1) ----------------------------------------------------
 
-# Presidio entity type -> leakguard severity. Unknown entities default to medium.
+# Presidio entity type -> predisclose severity. Unknown entities default to medium.
 PRESIDIO_SEVERITY = {
     "CREDIT_CARD": "high",
     "CRYPTO": "high",
@@ -78,7 +78,7 @@ _PRESIDIO_HINTED = False
 def _get_analyzer():
     """Return a cached presidio AnalyzerEngine, or None if presidio is missing.
 
-    Tests can bypass the heavy import/init by setting ``leakguard.ai._ANALYZER``.
+    Tests can bypass the heavy import/init by setting ``predisclose.ai._ANALYZER``.
     """
     global _ANALYZER, _ANALYZER_TRIED
     if _ANALYZER is not None:
@@ -114,12 +114,12 @@ def presidio_scan(text, allow=None, path="<text>"):
     if analyzer is None:
         if not _PRESIDIO_HINTED:
             _PRESIDIO_HINTED = True
-            _note("--presidio needs the AI extra: pip install 'leakguard[ai]' "
+            _note("--presidio needs the AI extra: pip install 'predisclose[ai]' "
                   "plus a spaCy model (python -m spacy download en_core_web_lg)")
         return []
-    lang = os.environ.get("LEAKGUARD_PRESIDIO_LANG", "en")
+    lang = os.environ.get("PREDISCLOSE_PRESIDIO_LANG", "en")
     try:
-        threshold = float(os.environ.get("LEAKGUARD_PRESIDIO_THRESHOLD", "0.5"))
+        threshold = float(os.environ.get("PREDISCLOSE_PRESIDIO_THRESHOLD", "0.5"))
     except ValueError:
         threshold = 0.5
     try:
@@ -168,19 +168,19 @@ _REVIEW_SYSTEM = (
 
 
 def llm_config_from_env():
-    base = os.environ.get("LEAKGUARD_LLM_BASE", DEFAULT_LLM_BASE).rstrip("/")
+    base = os.environ.get("PREDISCLOSE_LLM_BASE", DEFAULT_LLM_BASE).rstrip("/")
     try:
-        timeout = float(os.environ.get("LEAKGUARD_LLM_TIMEOUT", "60"))
+        timeout = float(os.environ.get("PREDISCLOSE_LLM_TIMEOUT", "60"))
     except ValueError:
         timeout = 60.0
     try:
-        max_chars = int(os.environ.get("LEAKGUARD_LLM_MAX_CHARS", "16000"))
+        max_chars = int(os.environ.get("PREDISCLOSE_LLM_MAX_CHARS", "16000"))
     except ValueError:
         max_chars = 16000
     return {
         "base": base,
-        "model": os.environ.get("LEAKGUARD_LLM_MODEL", DEFAULT_LLM_MODEL),
-        "key": os.environ.get("LEAKGUARD_LLM_KEY", ""),
+        "model": os.environ.get("PREDISCLOSE_LLM_MODEL", DEFAULT_LLM_MODEL),
+        "key": os.environ.get("PREDISCLOSE_LLM_KEY", ""),
         "timeout": timeout,
         "max_chars": max_chars,
     }
@@ -258,7 +258,7 @@ def llm_review_scan(text, prior_findings, path="<text>", allow=None, cfg=None):
         "temperature": 0,
         "response_format": {"type": "json_object"},
     }
-    headers = {"Content-Type": "application/json", "User-Agent": "leakguard"}
+    headers = {"Content-Type": "application/json", "User-Agent": "predisclose"}
     if cfg["key"]:
         headers["Authorization"] = f"Bearer {cfg['key']}"
     url = cfg["base"] + "/chat/completions"
@@ -268,7 +268,7 @@ def llm_review_scan(text, prior_findings, path="<text>", allow=None, cfg=None):
         if not _LLM_ERROR_HINTED:
             _LLM_ERROR_HINTED = True
             _note(f"--review: LLM endpoint unreachable at {cfg['base']} ({e}); "
-                  "set LEAKGUARD_LLM_BASE / LEAKGUARD_LLM_MODEL. Skipping review.")
+                  "set PREDISCLOSE_LLM_BASE / PREDISCLOSE_LLM_MODEL. Skipping review.")
         return []
     return _parse_review(resp, text, path, allow)
 

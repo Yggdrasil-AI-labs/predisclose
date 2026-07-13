@@ -10,7 +10,7 @@ from . import __version__
 _LEVEL = {"high": "error", "medium": "warning", "low": "note"}
 SCHEMA = ("https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/"
           "Schemata/sarif-schema-2.1.0.json")
-INFO_URI = "https://github.com/Yggdrasil-AI-labs/leakguard"
+INFO_URI = "https://github.com/Yggdrasil-AI-labs/predisclose"
 
 
 def redact(s):
@@ -64,7 +64,7 @@ def _result(f, index):
             }
         }],
         "partialFingerprints": {
-            "leakguard/v1": "%s:%s:%s:%s" % (f.rule_id, f.path, f.line, red)
+            "predisclose/v1": "%s:%s:%s:%s" % (f.rule_id, f.path, f.line, red)
         },
     }
     props = {}
@@ -84,7 +84,7 @@ def build_sarif(findings, tool_version=__version__):
         "version": "2.1.0",
         "runs": [{
             "tool": {"driver": {
-                "name": "leakguard",
+                "name": "predisclose",
                 "informationUri": INFO_URI,
                 "version": tool_version,
                 "rules": rules,

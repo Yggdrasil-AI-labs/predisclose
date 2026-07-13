@@ -1,4 +1,4 @@
-"""leakguard agent-loop tests (stdlib unittest; the local-model HTTP call is
+"""predisclose agent-loop tests (stdlib unittest; the local-model HTTP call is
 mocked via ai._http_post_json, so the suite runs with no model and no network).
 
 Run: python -m unittest
@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-from leakguard import agent, ai, cli
-from leakguard.engine import Finding
+from predisclose import agent, ai, cli
+from predisclose.engine import Finding
 
 
 def _finding(match, rule_id="generic-assignment-secret", severity="high",
@@ -83,7 +83,7 @@ class TestAgentLoop(unittest.TestCase):
     def test_allowlist_candidate_proposed_but_not_written(self):
         f = _finding("press@publicco.io", rule_id="email-address", severity="low")
         with tempfile.TemporaryDirectory() as d:
-            lr = os.path.join(d, ".leakguard.local.json")
+            lr = os.path.join(d, ".predisclose.local.json")
             with mock.patch.object(ai, "_http_post_json", _verdict_by_match(
                     {"press@publicco.io": "allowlist_candidate"})):
                 res = agent.run_agent(["."], [], set(), cfg=CFG, apply_allow=False,
@@ -97,7 +97,7 @@ class TestAgentLoop(unittest.TestCase):
     def test_apply_allow_writes_and_reaches_clean(self):
         f = _finding("press@publicco.io", rule_id="email-address", severity="low")
         with tempfile.TemporaryDirectory() as d:
-            lr = os.path.join(d, ".leakguard.local.json")
+            lr = os.path.join(d, ".predisclose.local.json")
             with mock.patch.object(ai, "_http_post_json", _verdict_by_match(
                     {"press@publicco.io": "allowlist_candidate"})):
                 res = agent.run_agent(["."], [], set(), cfg=CFG, apply_allow=True,

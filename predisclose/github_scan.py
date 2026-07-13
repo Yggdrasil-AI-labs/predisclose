@@ -14,7 +14,7 @@ from .fsscan import is_text, MAX_BYTES, SKIP_DIRS  # reuse text + skip heuristic
 
 
 def _headers():
-    h = {"User-Agent": "leakguard", "Accept": "application/vnd.github+json"}
+    h = {"User-Agent": "predisclose", "Accept": "application/vnd.github+json"}
     tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
     if tok:
         h["Authorization"] = f"Bearer {tok}"
@@ -34,7 +34,7 @@ def _raw(full_name, branch, path):
     url = "https://raw.githubusercontent.com/%s/%s/%s" % (
         full_name, branch, urllib.request.quote(path))
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "leakguard"})
+        req = urllib.request.Request(url, headers={"User-Agent": "predisclose"})
         with urllib.request.urlopen(req, timeout=30) as r:
             return r.read().decode("utf-8", "replace"), None
     except Exception as e:

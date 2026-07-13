@@ -7,7 +7,7 @@ from .engine import scan_text
 from .entropy import entropy_findings
 from .proximity import proximity_findings
 
-IGNORE_FILE = ".leakguardignore"
+IGNORE_FILE = ".prediscloseignore"
 
 TEXT_EXT = {
     ".md", ".markdown", ".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
@@ -53,7 +53,7 @@ def _read(path):
 
 
 def load_ignore(root="."):
-    """Read .leakguardignore (fnmatch globs, one per line, # comments)."""
+    """Read .prediscloseignore (fnmatch globs, one per line, # comments)."""
     pats = []
     try:
         with open(os.path.join(root, IGNORE_FILE), "r", encoding="utf-8") as fh:

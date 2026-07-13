@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "leakguard"
+name = "predisclose"
 version = "0.6.1"
 description = "Detect internal identifiers, secrets, and PII before they leak into public artifacts."
 readme = "README.md"
@@ -22,19 +22,19 @@ classifiers = [
 ]
 
 # The core is standard-library only (zero runtime dependencies). The optional
-# `ai` extra adds two LOCAL supplementary layers (see leakguard/ai.py):
+# `ai` extra adds two LOCAL supplementary layers (see predisclose/ai.py):
 #   - Presidio PII detection (presidio-analyzer + a spaCy model)
 #   - a local OpenAI-compatible LLM reviewer (uses stdlib urllib, no client dep)
-# Install with:  pip install 'leakguard[ai]'
+# Install with:  pip install 'predisclose[ai]'
 [project.optional-dependencies]
 ai = ["presidio-analyzer", "spacy"]
 
 [project.urls]
-Homepage = "https://github.com/Yggdrasil-AI-labs/leakguard"
-Issues = "https://github.com/Yggdrasil-AI-labs/leakguard/issues"
+Homepage = "https://github.com/Yggdrasil-AI-labs/predisclose"
+Issues = "https://github.com/Yggdrasil-AI-labs/predisclose/issues"
 
 [project.scripts]
-leakguard = "leakguard.cli:main"
+predisclose = "predisclose.cli:main"
 
 [tool.setuptools]
-packages = ["leakguard"]
+packages = ["predisclose"]

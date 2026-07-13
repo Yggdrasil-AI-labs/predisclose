@@ -1,5 +1,5 @@
-"""leakguard AI-layer tests (stdlib unittest; presidio + the HTTP call are
-mocked so the suite runs without the heavy `leakguard[ai]` dependencies).
+"""predisclose AI-layer tests (stdlib unittest; presidio + the HTTP call are
+mocked so the suite runs without the heavy `predisclose[ai]` dependencies).
 
 Run: python -m unittest
 """
@@ -7,8 +7,8 @@ import json
 import unittest
 from unittest import mock
 
-from leakguard import ai
-from leakguard.engine import Finding
+from predisclose import ai
+from predisclose.engine import Finding
 
 
 class FakeResult:
@@ -120,7 +120,7 @@ class TestLLMReview(unittest.TestCase):
 
     def test_default_endpoint_is_localhost(self):
         # Critical safety property: the shipped default must never be a remote
-        # host. (Assumes no LEAKGUARD_LLM_BASE override in the test environment.)
+        # host. (Assumes no PREDISCLOSE_LLM_BASE override in the test environment.)
         cfg = ai.llm_config_from_env()
         self.assertTrue(cfg["base"].startswith("http://localhost"),
                         f"default base must be localhost, got {cfg['base']!r}")

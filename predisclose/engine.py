@@ -1,10 +1,10 @@
-"""leakguard scan engine: load rules, scan text, return findings. Stdlib only.
+"""predisclose scan engine: load rules, scan text, return findings. Stdlib only.
 
 Rule sources, merged in this order:
   1. built-in generic patterns (patterns.py) unless disabled
   2. any files passed via --rules (JSON)
-  3. an auto-loaded private file `.leakguard.local.json` from the scan root or
-     $LEAKGUARD_RULES, if present (this is where org-specific patterns live; it
+  3. an auto-loaded private file `.predisclose.local.json` from the scan root or
+     $PREDISCLOSE_RULES, if present (this is where org-specific patterns live; it
      should be gitignored and NEVER committed)
 
 Private rules file format (JSON):
@@ -20,7 +20,7 @@ Private rules file format (JSON):
 (e.g. public codenames that look like internal names but are intentionally public).
 
 An optional "entropy" object in the same file configures opt-in high-entropy
-detection (see leakguard/entropy.py); it is ignored here.
+detection (see predisclose/entropy.py); it is ignored here.
 """
 import json
 import os
@@ -30,7 +30,7 @@ from dataclasses import dataclass, asdict
 from .patterns import builtin_rules
 
 SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2}
-LOCAL_RULES_NAME = ".leakguard.local.json"
+LOCAL_RULES_NAME = ".predisclose.local.json"
 
 
 @dataclass
@@ -112,7 +112,7 @@ def load_rules(extra_paths=None, use_builtin=True, scan_root="."):
         allow += a
     # auto-load private local config (gitignored, org-specific, never committed)
     candidates = []
-    env_path = os.environ.get("LEAKGUARD_RULES")
+    env_path = os.environ.get("PREDISCLOSE_RULES")
     if env_path:
         candidates.append(env_path)
     candidates.append(os.path.join(scan_root, LOCAL_RULES_NAME))

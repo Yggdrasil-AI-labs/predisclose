@@ -1,4 +1,4 @@
-# Paths leakguard skips when scanning this repo (fnmatch globs, one per line).
+# Paths predisclose skips when scanning this repo (fnmatch globs, one per line).
 # The test suite intentionally contains fake secrets as detection fixtures.
 tests
 tests/*

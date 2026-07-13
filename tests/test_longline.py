@@ -6,8 +6,8 @@ past the old 4000-char limit.
 """
 import unittest
 
-from leakguard.engine import load_rules, scan_text
-from leakguard.entropy import EntropyOptions, entropy_findings
+from predisclose.engine import load_rules, scan_text
+from predisclose.entropy import EntropyOptions, entropy_findings
 
 
 class TestLongLine(unittest.TestCase):

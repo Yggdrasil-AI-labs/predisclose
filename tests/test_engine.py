@@ -1,10 +1,10 @@
-"""leakguard engine tests (stdlib unittest; run: python -m unittest)."""
+"""predisclose engine tests (stdlib unittest; run: python -m unittest)."""
 import json
 import os
 import tempfile
 import unittest
 
-from leakguard.engine import load_rules, scan_text, severity_at_least
+from predisclose.engine import load_rules, scan_text, severity_at_least
 
 
 class TestBuiltin(unittest.TestCase):
@@ -56,7 +56,7 @@ class TestPrivateRules(unittest.TestCase):
 
     def test_autoload_local_file(self):
         with tempfile.TemporaryDirectory() as d:
-            with open(os.path.join(d, ".leakguard.local.json"), "w") as fh:
+            with open(os.path.join(d, ".predisclose.local.json"), "w") as fh:
                 json.dump({"rules": [{"id": "x", "pattern": r"SEKRET",
                                       "severity": "high"}]}, fh)
             rules, allow = load_rules(use_builtin=False, scan_root=d)

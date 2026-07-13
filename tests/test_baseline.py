@@ -1,10 +1,10 @@
-"""leakguard baseline tests."""
+"""predisclose baseline tests."""
 import os
 import tempfile
 import unittest
 
-from leakguard.engine import Finding
-from leakguard.baseline import fingerprint, load_baseline, write_baseline, filter_new
+from predisclose.engine import Finding
+from predisclose.baseline import fingerprint, load_baseline, write_baseline, filter_new
 
 
 def f(rule="aws-access-key-id", path="a.py", match="AKIAxxxxxxxxxxxxxxxx", line=1):

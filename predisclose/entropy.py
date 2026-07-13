@@ -160,10 +160,10 @@ def _read_entropy_config(extra_paths, scan_root):
     """Merge any "entropy" objects from the same JSON files the engine reads."""
     merged = {}
     paths = list(extra_paths or [])
-    env_path = os.environ.get("LEAKGUARD_RULES")
+    env_path = os.environ.get("PREDISCLOSE_RULES")
     if env_path:
         paths.append(env_path)
-    paths.append(os.path.join(scan_root or ".", ".leakguard.local.json"))
+    paths.append(os.path.join(scan_root or ".", ".predisclose.local.json"))
     for p in paths:
         if not p or not os.path.isfile(p):
             continue

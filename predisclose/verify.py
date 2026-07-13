@@ -1,6 +1,6 @@
 """Opt-in live verification for a handful of high-value credential types.
 
-Stdlib `urllib` only; OFF by default. With `--verify`, leakguard asks the provider
+Stdlib `urllib` only; OFF by default. With `--verify`, predisclose asks the provider
 whether each supported credential is currently valid:
 
   active   -> the provider accepted it; it works right now (rotate immediately)
@@ -20,7 +20,7 @@ import urllib.error
 import urllib.request
 
 TIMEOUT = 10
-_UA = {"User-Agent": "leakguard"}
+_UA = {"User-Agent": "predisclose"}
 
 
 def _status(url, headers, method="GET", data=None, ok_json=None, timeout=TIMEOUT):

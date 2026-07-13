@@ -6,9 +6,9 @@ committed version of the lab stress harness.
 """
 import unittest
 
-from leakguard.engine import load_rules, scan_text
-from leakguard.entropy import EntropyOptions, entropy_findings
-from leakguard.patterns import BUILTIN_PATTERNS
+from predisclose.engine import load_rules, scan_text
+from predisclose.entropy import EntropyOptions, entropy_findings
+from predisclose.patterns import BUILTIN_PATTERNS
 
 _A = "a"
 # rule_id -> a sample that MUST trigger it.

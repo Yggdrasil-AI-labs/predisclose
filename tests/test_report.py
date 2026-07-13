@@ -1,8 +1,8 @@
-"""leakguard report (Markdown / text summary) tests."""
+"""predisclose report (Markdown / text summary) tests."""
 import unittest
 
-from leakguard.engine import Finding
-from leakguard.report import build_markdown, build_summary_text
+from predisclose.engine import Finding
+from predisclose.report import build_markdown, build_summary_text
 
 SECRET = "AKIA1234567890ABCDEF"
 

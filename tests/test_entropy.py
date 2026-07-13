@@ -1,8 +1,8 @@
-"""leakguard entropy-detection tests (stdlib unittest)."""
+"""predisclose entropy-detection tests (stdlib unittest)."""
 import unittest
 
-from leakguard.engine import load_rules, scan_text
-from leakguard.entropy import (EntropyOptions, entropy_findings, shannon_entropy)
+from predisclose.engine import load_rules, scan_text
+from predisclose.entropy import (EntropyOptions, entropy_findings, shannon_entropy)
 
 # A 38-char token with many distinct characters -> high entropy, no pattern match.
 HIGH = "Zk8Qv3Lm9Xr2Tp7Wn5Bc1Yd6Hg4As0UeIoPq"

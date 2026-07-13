@@ -1,10 +1,10 @@
-"""leakguard webhook notifier tests (no network; urlopen is mocked)."""
+"""predisclose webhook notifier tests (no network; urlopen is mocked)."""
 import json
 import unittest
 from unittest import mock
 
-from leakguard.engine import Finding
-from leakguard import notify as N
+from predisclose.engine import Finding
+from predisclose import notify as N
 
 
 def _f():

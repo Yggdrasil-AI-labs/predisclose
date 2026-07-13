@@ -1,12 +1,12 @@
 """Push a findings summary to a webhook (Slack / Discord / generic). Stdlib only.
 
 Opt-in: fires only when a webhook URL is configured (`--notify-webhook` or the
-`LEAKGUARD_WEBHOOK` env var). The CLI calls it only when there are findings at or
-above the fail threshold, so a webhook means "leakguard found something you said
+`PREDISCLOSE_WEBHOOK` env var). The CLI calls it only when there are findings at or
+above the fail threshold, so a webhook means "predisclose found something you said
 should block." Never raises: a notification problem prints a one-line note and
 never breaks the scan or changes its exit code.
 
-Payload style (`--notify-style` / `LEAKGUARD_WEBHOOK_STYLE`):
+Payload style (`--notify-style` / `PREDISCLOSE_WEBHOOK_STYLE`):
   slack   (default)  -> {"text": <summary>}     Slack / Mattermost incoming webhooks
   discord            -> {"content": <summary>}   Discord webhooks
   generic            -> {"text": <summary>, "findings": [<finding dicts>]}
@@ -20,11 +20,11 @@ DISCORD_LIMIT = 1900  # Discord content cap is 2000 chars; leave headroom
 
 
 def webhook_from_env():
-    return os.environ.get("LEAKGUARD_WEBHOOK", "")
+    return os.environ.get("PREDISCLOSE_WEBHOOK", "")
 
 
 def style_from_env(default="slack"):
-    return os.environ.get("LEAKGUARD_WEBHOOK_STYLE", default)
+    return os.environ.get("PREDISCLOSE_WEBHOOK_STYLE", default)
 
 
 def build_payload(style, text, findings):
@@ -44,11 +44,11 @@ def notify(url, summary_text, findings, style=None, timeout=15):
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url, data=data, method="POST",
-        headers={"Content-Type": "application/json", "User-Agent": "leakguard"})
+        headers={"Content-Type": "application/json", "User-Agent": "predisclose"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             r.read()
         return True
     except Exception as e:
-        print(f"leakguard: webhook notify failed: {e}", file=sys.stderr)
+        print(f"predisclose: webhook notify failed: {e}", file=sys.stderr)
         return False

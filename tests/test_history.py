@@ -1,11 +1,11 @@
-"""leakguard git-history scan tests (stdlib unittest; builds throwaway repos)."""
+"""predisclose git-history scan tests (stdlib unittest; builds throwaway repos)."""
 import os
 import subprocess
 import tempfile
 import unittest
 
-from leakguard.engine import load_rules
-from leakguard.history import scan_history, is_git_repo
+from predisclose.engine import load_rules
+from predisclose.history import scan_history, is_git_repo
 
 SECRET = "AKIA1234567890ABCDEF"
 

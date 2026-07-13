@@ -1,8 +1,8 @@
-"""leakguard keyword-proximity tests."""
+"""predisclose keyword-proximity tests."""
 import unittest
 
-from leakguard.engine import Finding
-from leakguard.proximity import proximity_findings, KEYWORD_RULES
+from predisclose.engine import Finding
+from predisclose.proximity import proximity_findings, KEYWORD_RULES
 
 # keyword -> a synthetic token of the right shape, per rule_id
 SAMPLES = {

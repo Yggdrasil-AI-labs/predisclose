@@ -1,6 +1,6 @@
-"""leakguard agent: an autonomous triage loop over the scan engine.
+"""predisclose agent: an autonomous triage loop over the scan engine.
 
-LeakGuard's job is unchanged - catch secrets, PII, and internal identifiers
+Predisclose's job is unchanged - catch secrets, PII, and internal identifiers
 before they go public. This module runs that job as an AGENT rather than a
 one-shot scan: it scans, asks a LOCAL model to judge each finding (real leak vs
 false positive vs intentionally-public), acts on the judgment (proposes or
@@ -13,12 +13,12 @@ Design:
     model-agnostic and works with small local models that do not do native
     tool-calling.
   - Local-first: transport, config, and JSON parsing are reused from
-    leakguard.ai (stdlib urllib; the default endpoint is a localhost model).
+    predisclose.ai (stdlib urllib; the default endpoint is a localhost model).
   - Conservative: any finding the model cannot classify (endpoint down,
     unparseable reply) stays a real_leak. The agent never hides a possible leak.
-  - Detection / proposal-only: like the rest of leakguard it NEVER edits your
+  - Detection / proposal-only: like the rest of predisclose it NEVER edits your
     scanned content. With apply_allow it may append entries to your PRIVATE
-    rules file (.leakguard.local.json) - that is configuration, not content, and
+    rules file (.predisclose.local.json) - that is configuration, not content, and
     that file is gitignored.
 """
 import json
@@ -30,7 +30,7 @@ from .engine import LOCAL_RULES_NAME
 VERDICTS = ("real_leak", "false_positive", "allowlist_candidate")
 
 _TRIAGE_SYSTEM = (
-    "You are the triage step of leakguard, a scanner that catches secrets, PII, "
+    "You are the triage step of predisclose, a scanner that catches secrets, PII, "
     "and internal identifiers before they are published to a PUBLIC place. You "
     "are given ONE finding and the lines around it. Classify it as exactly one "
     "of:\n"
@@ -71,7 +71,7 @@ def _chat(cfg, system, user_obj):
         "temperature": 0,
         "response_format": {"type": "json_object"},
     }
-    headers = {"Content-Type": "application/json", "User-Agent": "leakguard"}
+    headers = {"Content-Type": "application/json", "User-Agent": "predisclose"}
     if cfg.get("key"):
         headers["Authorization"] = f"Bearer {cfg['key']}"
     try:
