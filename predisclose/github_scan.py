@@ -5,6 +5,7 @@ file contents from the raw.githubusercontent.com CDN. Unauthenticated by default
 (public repos); set GH_TOKEN / GITHUB_TOKEN to raise rate limits or read private
 repos you have access to.
 """
+import base64
 import json
 import os
 import urllib.request
@@ -31,6 +32,22 @@ def _api(path):
 
 
 def _raw(full_name, branch, path):
+    # Authenticated fetch via the Contents API reads PRIVATE repos too (the
+    # raw.githubusercontent CDN 404s on private content). Falls back to the CDN
+    # fast-path when unauthenticated (public repos).
+    tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if tok:
+        api_path = "/repos/%s/contents/%s?ref=%s" % (
+            full_name, urllib.request.quote(path), urllib.request.quote(branch))
+        data, err = _api(api_path)
+        if err:
+            return None, err
+        if not isinstance(data, dict) or data.get("encoding") != "base64":
+            return None, "unexpected contents response"
+        try:
+            return base64.b64decode(data.get("content", "")).decode("utf-8", "replace"), None
+        except Exception as e:
+            return None, str(e)
     url = "https://raw.githubusercontent.com/%s/%s/%s" % (
         full_name, branch, urllib.request.quote(path))
     try:
