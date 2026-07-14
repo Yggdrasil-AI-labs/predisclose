@@ -68,6 +68,9 @@ carries an internal identifier. And because the core is standard-library only, i
 also builds into a single file you can run in an ephemeral environment with
 nothing installed (see Single-file build).
 
+For a file-level comparison against gitleaks on a third-party planted-secret
+corpus, with method and caveats, see [docs/benchmark.md](docs/benchmark.md).
+
 Who it is for: anyone publishing from a private environment (open-sourcing an
 internal tool, writing a blog post or docs, or reviewing AI-generated output) who
 needs to catch internal identifiers and secrets before they go public.

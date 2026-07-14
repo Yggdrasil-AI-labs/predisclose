@@ -32,14 +32,36 @@ SKIP_DIRS = {".git", "node_modules", "vendor", "dist", "build", ".venv", "venv",
 MAX_BYTES = 800_000
 
 
+def _sniff_text(path, nbytes=4096):
+    """Content sniff for files with no known extension: text when a head sample
+    has no NUL byte and is mostly printable. Lets extensionless secret files
+    (id_rsa, .s3cfg, credentials, hub) be scanned instead of silently skipped."""
+    try:
+        with open(path, "rb") as fh:
+            chunk = fh.read(nbytes)
+    except OSError:
+        return False
+    if not chunk or 0 in chunk:  # NUL byte -> treat as binary
+        return False
+    printable = sum(b in (9, 10, 13) or 32 <= b < 127 or b >= 128 for b in chunk)
+    return printable / len(chunk) > 0.85
+
+
 def is_text(path):
     base = os.path.basename(path).lower()
     if base in TEXT_NAMES or base.startswith(("readme", "license")):
         return True
     stem, ext = os.path.splitext(base)
     if ext in BACKUP_SUFFIXES:  # peel a copy/backup suffix and re-check the inner ext
-        _, ext = os.path.splitext(stem)
-    return ext in TEXT_EXT
+        stem, ext = os.path.splitext(stem)
+    if ext in TEXT_EXT:
+        return True
+    # No known extension (dotfiles like .bashrc, or bare names like id_rsa):
+    # sniff the content rather than skip it, since many secret-bearing files
+    # carry no extension. An unknown NON-empty extension stays skipped.
+    if ext == "":
+        return _sniff_text(path)
+    return False
 
 
 def _read(path):
