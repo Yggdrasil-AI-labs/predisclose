@@ -52,7 +52,7 @@ pass and a local-LLM reviewer on top of the regex engine; see below.
 | Entropy detection | yes (opt-in) | yes | yes | yes |
 | Live credential verification | opt-in (~10 providers) | no | yes (800+) | no |
 | Local-LLM semantic review | yes | no | no | no |
-| Agentic triage loop (scan → judge → act → re-scan, local) | yes | no | no | no |
+| Bounded triage loop (scan → judge → act → re-scan, local) | yes | no | no | no |
 | SARIF / GitHub code scanning | yes | yes | partial | no |
 | pre-commit framework hook | yes | yes | yes | yes |
 | Core runtime dependencies | none | Go binary | Go binary | Python deps |
@@ -349,7 +349,7 @@ model unless you have decided otherwise.
 `scan` finds and reports; `agent` runs the same detection as a loop that also
 *acts*. It scans, asks a LOCAL model to judge each finding, acts on the verdict,
 then re-scans, repeating until the artifact is clean or a step budget runs out.
-Predisclose's job is unchanged; this is the one-shot scan turned into an agent.
+The detection is unchanged; this is the one-shot scan run as a bounded loop.
 
 ```
 predisclose agent .

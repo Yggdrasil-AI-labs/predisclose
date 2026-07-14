@@ -255,7 +255,7 @@ def main(argv=None):
                     help="where to write the private rules file (default .predisclose.local.json)")
 
     ag = sub.add_parser("agent",
-                        help="autonomous loop: scan, judge each finding with a "
+                        help="bounded loop: scan, judge each finding with a "
                              "LOCAL model, act, re-scan until clean (needs a local LLM)")
     ag.add_argument("paths", nargs="*", default=["."])
     ag.add_argument("--max-steps", type=int, default=3,

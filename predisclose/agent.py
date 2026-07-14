@@ -1,4 +1,4 @@
-"""predisclose agent: an autonomous triage loop over the scan engine.
+"""predisclose agent: a bounded triage loop over the scan engine.
 
 Predisclose's job is unchanged - catch secrets, PII, and internal identifiers
 before they go public. This module runs that job as an AGENT rather than a
