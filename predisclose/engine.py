@@ -25,6 +25,8 @@ detection (see predisclose/entropy.py); it is ignored here.
 import json
 import os
 import re
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass, asdict
 
 from .patterns import builtin_rules
@@ -93,12 +95,52 @@ def _rules_from_dicts(items):
     return out
 
 
-def _load_rules_file(path):
-    with open(path, "r", encoding="utf-8") as fh:
-        data = json.load(fh)
+def _load_rules_text(text):
+    data = json.loads(text)
     if isinstance(data, list):
         return _rules_from_dicts(data), []
     return _rules_from_dicts(data.get("rules", [])), list(data.get("allow", []))
+
+
+def _load_rules_file(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        return _load_rules_text(fh.read())
+
+
+def _is_url(s):
+    return isinstance(s, str) and (s.startswith("http://") or s.startswith("https://"))
+
+
+def _rules_auth_headers(url):
+    """Best-effort auth for a private rule URL, from env tokens. Stdlib only.
+
+    PREDISCLOSE_RULES_TOKEN wins if set (sent as a Bearer token). Otherwise a
+    GitHub host uses GH_TOKEN / GITHUB_TOKEN and a GitLab host uses GITLAB_TOKEN,
+    so you can point at a private gist or raw repo file with a token already in
+    the environment. No token is required for a public or secret-URL gist.
+    """
+    headers = {"User-Agent": "predisclose"}
+    tok = os.environ.get("PREDISCLOSE_RULES_TOKEN")
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
+        return headers
+    host = urllib.parse.urlparse(url).netloc.lower()
+    if "github" in host:
+        gh = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+        if gh:
+            headers["Authorization"] = f"Bearer {gh}"
+    elif "gitlab" in host:
+        gl = os.environ.get("GITLAB_TOKEN")
+        if gl:
+            headers["PRIVATE-TOKEN"] = gl
+    return headers
+
+
+def _fetch_rules_url(url, timeout=15):
+    """Fetch a rules JSON document over HTTP(S) with stdlib urllib."""
+    req = urllib.request.Request(url, headers=_rules_auth_headers(url))
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", "replace")
 
 
 def load_rules(extra_paths=None, use_builtin=True, scan_root="."):
@@ -107,7 +149,15 @@ def load_rules(extra_paths=None, use_builtin=True, scan_root="."):
     if use_builtin:
         rules += _rules_from_dicts(builtin_rules())
     for p in (extra_paths or []):
-        r, a = _load_rules_file(p)
+        r, a = (_load_rules_text(_fetch_rules_url(p)) if _is_url(p)
+                else _load_rules_file(p))
+        rules += r
+        allow += a
+    # a private rules URL (e.g. a private gist or raw repo file), fetched with
+    # stdlib urllib; lets a small team share one rules doc without committing it.
+    url_env = os.environ.get("PREDISCLOSE_RULES_URL")
+    if url_env:
+        r, a = _load_rules_text(_fetch_rules_url(url_env))
         rules += r
         allow += a
     # auto-load private local config (gitignored, org-specific, never committed)

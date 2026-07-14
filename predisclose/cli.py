@@ -132,7 +132,7 @@ def _emit(findings, scanned, label, fmt, fail_on, use_color):
 
 def _add_common(p):
     p.add_argument("--rules", action="append", default=[],
-                   help="extra rules JSON file (repeatable). Private/org rules go here.")
+                   help="extra rules JSON file or URL (repeatable). Private/org rules go here.")
     p.add_argument("--no-builtin", action="store_true",
                    help="disable the built-in generic patterns")
     p.add_argument("--fail-on", choices=["low", "medium", "high"], default="medium",
@@ -264,7 +264,7 @@ def main(argv=None):
                     help="append allowlist_candidate matches to your PRIVATE rules "
                          "file (.predisclose.local.json); off by default (propose-only)")
     ag.add_argument("--rules", action="append", default=[],
-                    help="extra rules JSON file (repeatable). Private/org rules go here.")
+                    help="extra rules JSON file or URL (repeatable). Private/org rules go here.")
     ag.add_argument("--no-builtin", action="store_true",
                     help="disable the built-in generic patterns")
     ag.add_argument("--fail-on", choices=["low", "medium", "high"], default="medium",

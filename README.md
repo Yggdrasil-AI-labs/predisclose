@@ -61,7 +61,12 @@ predisclose does not aim to match the big scanners on raw credential breadth;
 trufflehog (800+ detectors, with live verification) and gitleaks cover that. Its
 focus is the private-inventory model and disclosure coverage: catching an internal
 hostname, an unreleased project name, or a person, with the rule list kept
-private, in a stdlib-only core you can read end to end and drop into any CI.
+private, in a stdlib-only core you can read end to end and drop into any CI. It sits in the
+publish step rather than the security-audit step: the question is not only whether
+a credential is live, but whether an artifact you are about to make public still
+carries an internal identifier. And because the core is standard-library only, it
+also builds into a single file you can run in an ephemeral environment with
+nothing installed (see Single-file build).
 
 Who it is for: anyone publishing from a private environment (open-sourcing an
 internal tool, writing a blog post or docs, or reviewing AI-generated output) who
@@ -203,6 +208,27 @@ gitignored. Format:
 is dropped, which is how you whitelist public names that resemble internal ones.
 
 Because `pattern` is a standard-library `re` expression run over file contents (capped at 800 KB per file), keep private-rule patterns linear-time: avoid nested quantifiers like `(a+)+` that can backtrack catastrophically. The built-in patterns are all single-quantifier shapes.
+
+### Sharing private rules across a team
+
+The rules file is gitignored on purpose, so a small team needs a way to share it
+without committing it. Point predisclose at a URL instead of a local path and it
+fetches the JSON at runtime with stdlib `urllib`:
+
+```
+predisclose scan . --rules https://gist.githubusercontent.com/you/ID/raw/rules.json
+# or, so every run picks it up:
+export PREDISCLOSE_RULES_URL=https://gist.githubusercontent.com/you/ID/raw/rules.json
+predisclose scan .
+```
+
+One person maintains a private gist (or a raw file in a private repo); everyone
+else gets the current rules on their next run, using the token they already have.
+For a private source, provide a token via the environment: `PREDISCLOSE_RULES_TOKEN`
+(sent as a bearer token, any host), or the `GH_TOKEN` / `GITHUB_TOKEN` /
+`GITLAB_TOKEN` already in your environment for GitHub and GitLab hosts. If the
+fetch fails, the scan stops with an error rather than silently running without
+your private rules.
 
 ## Entropy detection
 
