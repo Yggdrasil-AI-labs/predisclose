@@ -111,7 +111,7 @@ predisclose scan . --entropy
 predisclose scan . --entropy --entropy-threshold 4.5
 ```
 
-Audit published repos read-only (an org, a user, or specific repos):
+Audit repos you have already pushed. This is a post-publish safety net; the pre-commit and `scan` workflows above are the primary use. Read-only (an org, a user, or specific repos):
 
 ```
 predisclose github --org your-org
