@@ -39,7 +39,7 @@ ENTRY = (
 )
 
 
-def build(out_path, interpreter="/usr/bin/env python3", compress=True):
+def build(out_path):
     """Stage the package plus an exit-code-propagating entry point, then zip it."""
     with tempfile.TemporaryDirectory() as staging:
         # zipapp archives a *source directory*; stage the package inside it so the
@@ -56,10 +56,8 @@ def build(out_path, interpreter="/usr/bin/env python3", compress=True):
             os.makedirs(out_dir, exist_ok=True)
         # No main= here: we ship our own __main__.py above so sys.exit runs.
         zipapp.create_archive(
-            staging,
-            target=out_path,
-            interpreter=interpreter,
-            compressed=compress,
+            staging, target=out_path,
+            interpreter="/usr/bin/env python3", compressed=True,
         )
     return out_path
 
@@ -69,12 +67,8 @@ def main():
     ap.add_argument("-o", "--output",
                     default=os.path.join(ROOT, "dist", "predisclose.pyz"),
                     help="output path (default: dist/predisclose.pyz)")
-    ap.add_argument("--interpreter", default="/usr/bin/env python3",
-                    help="shebang interpreter line baked into the archive")
-    ap.add_argument("--no-compress", action="store_true",
-                    help="store instead of deflate (larger, no zlib at runtime)")
     args = ap.parse_args()
-    path = build(args.output, args.interpreter, compress=not args.no_compress)
+    path = build(args.output)
     print(f"built {path} ({os.path.getsize(path):,} bytes)")
 
 

@@ -114,10 +114,10 @@ def _is_url(s):
 def _rules_auth_headers(url):
     """Best-effort auth for a private rule URL, from env tokens. Stdlib only.
 
-    PREDISCLOSE_RULES_TOKEN wins if set (sent as a Bearer token). Otherwise a
-    GitHub host uses GH_TOKEN / GITHUB_TOKEN and a GitLab host uses GITLAB_TOKEN,
-    so you can point at a private gist or raw repo file with a token already in
-    the environment. No token is required for a public or secret-URL gist.
+    PREDISCLOSE_RULES_TOKEN wins if set (a Bearer token, any host). Otherwise a
+    GitHub host picks up GH_TOKEN / GITHUB_TOKEN, so you can point at a private
+    gist or raw repo file with a token already in the environment. No token is
+    required for a public or secret-URL gist.
     """
     headers = {"User-Agent": "predisclose"}
     tok = os.environ.get("PREDISCLOSE_RULES_TOKEN")
@@ -129,10 +129,6 @@ def _rules_auth_headers(url):
         gh = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
         if gh:
             headers["Authorization"] = f"Bearer {gh}"
-    elif "gitlab" in host:
-        gl = os.environ.get("GITLAB_TOKEN")
-        if gl:
-            headers["PRIVATE-TOKEN"] = gl
     return headers
 
 

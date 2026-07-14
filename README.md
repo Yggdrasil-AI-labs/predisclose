@@ -228,8 +228,8 @@ predisclose scan .
 One person maintains a private gist (or a raw file in a private repo); everyone
 else gets the current rules on their next run, using the token they already have.
 For a private source, provide a token via the environment: `PREDISCLOSE_RULES_TOKEN`
-(sent as a bearer token, any host), or the `GH_TOKEN` / `GITHUB_TOKEN` /
-`GITLAB_TOKEN` already in your environment for GitHub and GitLab hosts. If the
+(a bearer token for any host), or the `GH_TOKEN` / `GITHUB_TOKEN` already in
+your environment for GitHub hosts. If the
 fetch fails, the scan stops with an error rather than silently running without
 your private rules.
 

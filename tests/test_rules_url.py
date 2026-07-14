@@ -90,14 +90,6 @@ class TestRulesUrl(unittest.TestCase):
         finally:
             os.environ.pop("GH_TOKEN", None)
 
-    def test_auth_headers_gitlab_token(self):
-        os.environ["GITLAB_TOKEN"] = "gltok"
-        try:
-            h = _rules_auth_headers("https://gitlab.com/api/v4/x")
-            self.assertEqual(h["PRIVATE-TOKEN"], "gltok")
-        finally:
-            os.environ.pop("GITLAB_TOKEN", None)
-
     def test_no_token_no_auth_header(self):
         for v in ("PREDISCLOSE_RULES_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
             os.environ.pop(v, None)
