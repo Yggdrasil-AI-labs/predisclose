@@ -32,28 +32,29 @@ def _api(path):
 
 
 def _raw(full_name, branch, path):
-    # Authenticated fetch via the Contents API reads PRIVATE repos too (the
-    # raw.githubusercontent CDN 404s on private content). Falls back to the CDN
-    # fast-path when unauthenticated (public repos).
-    tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
-    if tok:
-        api_path = "/repos/%s/contents/%s?ref=%s" % (
-            full_name, urllib.request.quote(path), urllib.request.quote(branch))
-        data, err = _api(api_path)
-        if err:
-            return None, err
-        if not isinstance(data, dict) or data.get("encoding") != "base64":
-            return None, "unexpected contents response"
-        try:
-            return base64.b64decode(data.get("content", "")).decode("utf-8", "replace"), None
-        except Exception as e:
-            return None, str(e)
+    # Public repos: the raw.githubusercontent CDN is unmetered, so try it first.
+    # Private repos 404 on the CDN; only then, if a token is present, fall back to
+    # the authenticated Contents API (rate-limited, ~1 request/file). This keeps
+    # public scans off the API quota even when a token is set.
     url = "https://raw.githubusercontent.com/%s/%s/%s" % (
         full_name, branch, urllib.request.quote(path))
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "predisclose"})
         with urllib.request.urlopen(req, timeout=30) as r:
             return r.read().decode("utf-8", "replace"), None
+    except Exception as cdn_err:
+        tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+        if not tok:
+            return None, str(cdn_err)
+    api_path = "/repos/%s/contents/%s?ref=%s" % (
+        full_name, urllib.request.quote(path), urllib.request.quote(branch))
+    data, err = _api(api_path)
+    if err:
+        return None, err
+    if not isinstance(data, dict) or data.get("encoding") != "base64":
+        return None, "unexpected contents response"
+    try:
+        return base64.b64decode(data.get("content", "")).decode("utf-8", "replace"), None
     except Exception as e:
         return None, str(e)
 
