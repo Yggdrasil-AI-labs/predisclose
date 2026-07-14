@@ -82,6 +82,29 @@ pip install 'predisclose[ai]'   # presidio-analyzer + spacy
 python -m spacy download en_core_web_lg
 ```
 
+### Single-file build (no install)
+
+The stdlib core also builds into one self-contained executable you can copy
+anywhere Python 3.8+ runs, with nothing to install:
+
+```
+python scripts/build_pyz.py          # writes dist/predisclose.pyz
+python dist/predisclose.pyz scan .
+```
+
+Every tagged release also attaches a prebuilt `predisclose.pyz`, so you can drop
+it straight into an ephemeral environment (a notebook cell, an agent scratchpad,
+a bare container) as a last-mile scrub before pushing work public:
+
+```
+curl -sSL -o predisclose.pyz \
+  https://github.com/Yggdrasil-AI-labs/predisclose/releases/latest/download/predisclose.pyz
+python predisclose.pyz scan .
+```
+
+The archive is plain Python; unzip it and read it end to end. Only the core runs
+from the .pyz; the optional AI layers still need the `predisclose[ai]` extra.
+
 ## Usage
 
 Scan a tree:
@@ -178,6 +201,8 @@ gitignored. Format:
 `pattern` is a Python regular expression. `severity` is `low`, `medium`, or
 `high`. `allow` is a list of literal strings; any match equal to an allow entry
 is dropped, which is how you whitelist public names that resemble internal ones.
+
+Because `pattern` is a standard-library `re` expression run over file contents (capped at 800 KB per file), keep private-rule patterns linear-time: avoid nested quantifiers like `(a+)+` that can backtrack catastrophically. The built-in patterns are all single-quantifier shapes.
 
 ## Entropy detection
 
